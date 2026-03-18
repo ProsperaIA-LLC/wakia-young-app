@@ -1,20 +1,67 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
+// Routes that require an authenticated session (student)
+const STUDENT_ROUTES = ['/dashboard', '/deliverables', '/pod', '/diary', '/project']
+
+// Routes that require role === 'mentor'
+const MENTOR_ROUTES = ['/pods', '/students']
+
+// Routes accessible only when NOT logged in
+const AUTH_ROUTES = ['/login', '/register']
+
+function redirect(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone()
+  url.pathname = pathname
+  return NextResponse.redirect(url)
+}
+
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  const { pathname } = request.nextUrl
+
+  // Refresh session and get user
+  const { supabaseResponse, supabase, user } = await updateSession(request)
+
+  const isStudentRoute = STUDENT_ROUTES.some(r => pathname.startsWith(r))
+  const isMentorRoute  = MENTOR_ROUTES.some(r => pathname.startsWith(r))
+  const isAuthRoute    = AUTH_ROUTES.some(r => pathname.startsWith(r))
+  const isOnboarding   = pathname.startsWith('/onboarding')
+
+  // 1. Unauthenticated → /login
+  if (!user && (isStudentRoute || isMentorRoute)) {
+    return redirect(request, '/login')
+  }
+
+  if (user) {
+    // 2. Authenticated but no nickname → /onboarding (skip if already there)
+    if (!isOnboarding && (isStudentRoute || isMentorRoute)) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('nickname, role')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.nickname) {
+        return redirect(request, '/onboarding')
+      }
+
+      // 3. Mentor routes require role === 'mentor'
+      if (isMentorRoute && profile?.role !== 'mentor') {
+        return redirect(request, '/dashboard')
+      }
+    }
+
+    // 4. Logged-in users visiting /login or /register → /dashboard
+    if (isAuthRoute) {
+      return redirect(request, '/dashboard')
+    }
+  }
+
+  return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public folder
-     * - api routes (handled separately)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

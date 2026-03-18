@@ -26,27 +26,8 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh session — do NOT add logic between createServerClient and getUser
+  // IMPORTANT: do NOT add logic between createServerClient and getUser
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect student and mentor routes
-  const { pathname } = request.nextUrl
-
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/onboarding')
-  const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/deliverables') || pathname.startsWith('/pod') || pathname.startsWith('/diary') || pathname.startsWith('/project')
-  const isMentorRoute = pathname.startsWith('/mentor')
-
-  if (!user && (isProtectedRoute || isMentorRoute)) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  if (user && isAuthRoute && pathname !== '/onboarding') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  return supabaseResponse
+  return { supabaseResponse, supabase, user }
 }
