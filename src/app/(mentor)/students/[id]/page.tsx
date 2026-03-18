@@ -1,4 +1,385 @@
-// Individual student detail view for mentor
-export default function StudentDetailPage() {
-  return null;
+'use client'
+
+import { useState, useEffect, use } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+interface StudentProfile {
+  id: string
+  full_name: string
+  nickname: string | null
+  avatar_url: string | null
+  country: string | null
+  age: number | null
+  timezone: string | null
+  created_at: string
+}
+
+interface DeliverableRow {
+  id: string
+  week_id: string
+  status: string
+  content: string | null
+  created_at: string
+  week: { week_number: number; title: string; phase: string } | null
+}
+
+interface ReflectionRow {
+  id: string
+  week_id: string
+  status: string
+  q1: string | null
+  q2: string | null
+  q3: string | null
+  mentor_feedback: string | null
+  created_at: string
+  week: { week_number: number; title: string } | null
+}
+
+interface NoteRow {
+  id: string
+  content: string
+  created_at: string
+}
+
+export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const router = useRouter()
+
+  const [student, setStudent] = useState<StudentProfile | null>(null)
+  const [deliverables, setDeliverables] = useState<DeliverableRow[]>([])
+  const [reflections, setReflections] = useState<ReflectionRow[]>([])
+  const [notes, setNotes] = useState<NoteRow[]>([])
+  const [cohortId, setCohortId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [newNote, setNewNote] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [feedbackId, setFeedbackId] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState('')
+  const [savingFeedback, setSavingFeedback] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+
+      // Student profile
+      const { data: profileData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single()
+      setStudent(profileData)
+
+      // Active enrollment
+      const { data: enrollment } = await supabase
+        .from('enrollments')
+        .select('cohort_id')
+        .eq('user_id', id)
+        .eq('status', 'active')
+        .single()
+      if (enrollment) setCohortId(enrollment.cohort_id)
+
+      // All deliverables
+      const { data: delivData } = await supabase
+        .from('deliverables')
+        .select('*, weeks(week_number, title, phase)')
+        .eq('user_id', id)
+        .order('created_at', { ascending: true })
+      if (delivData) setDeliverables(delivData.map((d: any) => ({ ...d, week: d.weeks ?? null })))
+
+      // All submitted reflections
+      const { data: reflData } = await supabase
+        .from('reflections')
+        .select('*, weeks(week_number, title)')
+        .eq('user_id', id)
+        .order('created_at', { ascending: false })
+      if (reflData) setReflections(reflData.map((r: any) => ({ ...r, week: r.weeks ?? null })))
+
+      // Mentor notes
+      const { data: notesData } = await supabase
+        .from('mentor_notes')
+        .select('id, content, created_at')
+        .eq('student_id', id)
+        .order('created_at', { ascending: false })
+      if (notesData) setNotes(notesData)
+
+      setLoading(false)
+    }
+    load()
+  }, [id])
+
+  async function saveNote() {
+    if (!newNote.trim() || !cohortId) return
+    setSavingNote(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase.from('mentor_notes').insert({
+      mentor_id: user.id,
+      student_id: id,
+      cohort_id: cohortId,
+      content: newNote.trim(),
+    }).select('id, content, created_at').single()
+
+    if (data) setNotes(prev => [data, ...prev])
+    setNewNote('')
+    setSavingNote(false)
+  }
+
+  async function saveReflectionFeedback() {
+    if (!feedbackId || !feedback.trim()) return
+    setSavingFeedback(true)
+    const supabase = createClient()
+    await supabase.from('reflections').update({ mentor_feedback: feedback }).eq('id', feedbackId)
+    setReflections(prev => prev.map(r => r.id === feedbackId ? { ...r, mentor_feedback: feedback } : r))
+    setFeedbackId(null)
+    setFeedback('')
+    setSavingFeedback(false)
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '50%',
+          border: '3px solid var(--border)', borderTopColor: 'var(--magenta)',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
+  if (!student) return (
+    <div style={{ padding: '48px', textAlign: 'center', color: '#6B7280' }}>Estudiante no encontrado</div>
+  )
+
+  const submittedCount = deliverables.filter(d => ['submitted', 'reviewed'].includes(d.status)).length
+
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '32px 24px' }}>
+
+      {/* Back */}
+      <button
+        onClick={() => router.back()}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--teal)', fontWeight: 600, fontSize: '13px', marginBottom: '20px', padding: 0 }}
+      >
+        ← Volver al panel
+      </button>
+
+      {/* Student header */}
+      <div style={{
+        background: 'var(--navy)', color: 'white',
+        borderRadius: 'var(--radius-lg)', padding: '28px',
+        marginBottom: '24px',
+        display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap',
+      }}>
+        <div style={{
+          width: '56px', height: '56px', borderRadius: '50%',
+          background: 'var(--magenta)', color: 'white', fontWeight: 800,
+          fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {student.avatar_url || student.nickname?.slice(0, 2).toUpperCase() || '??'}
+        </div>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontWeight: 800, fontSize: '22px', margin: '0 0 4px' }}>
+            {student.nickname || student.full_name.split(' ')[0]}
+          </h1>
+          <p style={{ opacity: 0.6, fontSize: '13px', margin: 0 }}>
+            {student.full_name}
+            {student.country && ` · ${student.country}`}
+            {student.age && ` · ${student.age} años`}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontWeight: 800, fontSize: '24px', margin: 0, color: 'var(--teal)' }}>{submittedCount}</p>
+            <p style={{ fontSize: '11px', opacity: 0.6, margin: 0 }}>Entregados</p>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontWeight: 800, fontSize: '24px', margin: 0, color: 'var(--gold)' }}>{reflections.length}</p>
+            <p style={{ fontSize: '11px', opacity: 0.6, margin: 0 }}>Reflexiones</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Deliverables progress */}
+      <section style={{ marginBottom: '28px' }}>
+        <h2 style={{ fontWeight: 700, fontSize: '16px', marginBottom: '14px' }}>Entregables (6 semanas)</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {deliverables.length === 0 && (
+            <p style={{ color: '#9CA3AF', fontSize: '14px' }}>Sin entregables aún.</p>
+          )}
+          {deliverables.map(d => (
+            <div key={d.id} style={{
+              background: 'white', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)', padding: '14px 18px',
+              display: 'flex', alignItems: 'flex-start', gap: '14px',
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>
+                    S{d.week?.week_number ?? '?'} — {d.week?.title ?? 'Entregable'}
+                  </span>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px',
+                    background: ['submitted', 'reviewed'].includes(d.status) ? '#D1FAE5' : '#FEF3C7',
+                    color: ['submitted', 'reviewed'].includes(d.status) ? '#065F46' : '#92400E',
+                  }}>
+                    {d.status === 'submitted' ? 'Entregado' : d.status === 'reviewed' ? 'Revisado' : 'Borrador'}
+                  </span>
+                </div>
+                {d.content && (
+                  <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {d.content.length > 200 ? d.content.slice(0, 200) + '...' : d.content}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Reflections with feedback */}
+      <section style={{ marginBottom: '28px' }}>
+        <h2 style={{ fontWeight: 700, fontSize: '16px', marginBottom: '14px' }}>Reflexiones</h2>
+        {reflections.length === 0 && (
+          <p style={{ color: '#9CA3AF', fontSize: '14px' }}>Sin reflexiones aún.</p>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {reflections.map(r => (
+            <div key={r.id} style={{
+              background: 'white', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)', padding: '16px 18px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ fontWeight: 700, fontSize: '13px' }}>
+                  S{r.week?.week_number ?? '?'} — {r.week?.title ?? 'Reflexión'}
+                </span>
+                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                  {new Date(r.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
+                {[
+                  { label: '¿Qué aprendiste?', value: r.q1 },
+                  { label: '¿Dónde te bloqueaste?', value: r.q2 },
+                  { label: '¿Qué harías diferente?', value: r.q3 },
+                ].map(({ label, value }) => value && (
+                  <div key={label}>
+                    <p style={{ fontSize: '11px', fontWeight: 600, color: '#9CA3AF', margin: '0 0 3px', textTransform: 'uppercase' }}>{label}</p>
+                    <p style={{ fontSize: '13px', color: 'var(--ink)', margin: 0, lineHeight: 1.5 }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mentor feedback */}
+              {r.mentor_feedback ? (
+                <div style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 'var(--radius)', padding: '10px 14px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--teal)', margin: '0 0 4px' }}>Tu feedback</p>
+                  <p style={{ fontSize: '13px', color: 'var(--ink)', margin: 0 }}>{r.mentor_feedback}</p>
+                </div>
+              ) : feedbackId === r.id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <textarea
+                    value={feedback}
+                    onChange={e => setFeedback(e.target.value)}
+                    placeholder="Escribí tu feedback para esta reflexión..."
+                    style={{
+                      width: '100%', minHeight: '80px', padding: '10px 12px',
+                      border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                      fontFamily: 'inherit', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={saveReflectionFeedback}
+                      disabled={savingFeedback || !feedback.trim()}
+                      style={{
+                        background: 'var(--teal)', color: 'white', border: 'none',
+                        borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 700,
+                        fontSize: '12px', cursor: 'pointer',
+                      }}
+                    >
+                      {savingFeedback ? 'Guardando...' : 'Guardar feedback'}
+                    </button>
+                    <button
+                      onClick={() => { setFeedbackId(null); setFeedback('') }}
+                      style={{
+                        background: 'none', color: '#6B7280', border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 600,
+                        fontSize: '12px', cursor: 'pointer',
+                      }}
+                    >Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setFeedbackId(r.id)}
+                  style={{
+                    background: 'none', color: 'var(--teal)', border: '1px solid var(--teal)',
+                    borderRadius: 'var(--radius)', padding: '6px 14px', fontWeight: 600,
+                    fontSize: '12px', cursor: 'pointer',
+                  }}
+                >
+                  + Dar feedback
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Mentor notes */}
+      <section>
+        <h2 style={{ fontWeight: 700, fontSize: '16px', marginBottom: '14px' }}>Notas del mentor</h2>
+        <div style={{
+          background: 'white', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)', padding: '16px 18px',
+          marginBottom: '12px',
+        }}>
+          <textarea
+            value={newNote}
+            onChange={e => setNewNote(e.target.value)}
+            placeholder="Añadí una nota privada sobre este estudiante..."
+            style={{
+              width: '100%', minHeight: '80px', padding: '10px 12px',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+              fontFamily: 'inherit', fontSize: '13px', resize: 'vertical',
+              boxSizing: 'border-box', marginBottom: '10px',
+            }}
+          />
+          <button
+            onClick={saveNote}
+            disabled={savingNote || !newNote.trim()}
+            style={{
+              background: 'var(--magenta)', color: 'white', border: 'none',
+              borderRadius: 'var(--radius)', padding: '8px 18px', fontWeight: 700,
+              fontSize: '13px', cursor: savingNote ? 'not-allowed' : 'pointer',
+              opacity: savingNote ? 0.7 : 1,
+            }}
+          >
+            {savingNote ? 'Guardando...' : 'Guardar nota'}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {notes.map(n => (
+            <div key={n.id} style={{
+              background: '#FFFBEB', border: '1px solid #FDE68A',
+              borderRadius: 'var(--radius)', padding: '12px 14px',
+            }}>
+              <p style={{ fontSize: '13px', color: 'var(--ink)', margin: '0 0 4px', lineHeight: 1.5 }}>{n.content}</p>
+              <p style={{ fontSize: '11px', color: '#9CA3AF', margin: 0 }}>
+                {new Date(n.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+    </div>
+  )
 }
