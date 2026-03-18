@@ -1,1 +1,40 @@
-/* Brand CSS variables — Prospera Young AI design system */
+/* ============================================================
+   globals.css — Prospera Young AI Design System
+   Brand CSS variables. Import this file in app/globals.css.
+   ============================================================ */
+
+:root {
+  /* ── Brand Colors ─────────────────────────────────────── */
+  --navy:     #0E2A47;   /* sidebar, hero banners, dark backgrounds */
+  --navy2:    #163857;   /* secondary dark surfaces */
+  --teal:     #008ca5;   /* links, progress bars, info states */
+  --teal-l:   #e0f4f8;   /* teal light background */
+  --green:    #00c896;   /* PRIMARY ACTION — buttons, success, CTA */
+  --green-d:  #00a87a;   /* green hover/dark */
+  --green-l:  #d6faf2;   /* green light background */
+  --gold:     #e0a326;   /* streaks, achievements, highlights */
+  --gold-l:   #fef3d7;   /* gold light background */
+  --coral:    #ff5c35;   /* urgency, deadlines, alerts, pending */
+  --coral-l:  #ffede8;   /* coral light background */
+  --magenta:  #a5086b;   /* Próspero AI tutor, mentor identity */
+  --mag-l:    #fce8f4;   /* magenta light background */
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --ink:      #111110;   /* primary text */
+  --ink2:     #3a3936;   /* secondary text */
+  --ink3:     #8a8884;   /* muted text, labels */
+  --ink4:     #c5c2bb;   /* placeholder text, disabled */
+
+  /* ── Backgrounds ──────────────────────────────────────── */
+  --bg:       #f5f4f0;   /* page background */
+  --bg2:      #ebebE4;   /* secondary background, input fields */
+  --white:    #ffffff;   /* cards, surfaces */
+
+  /* ── Borders ──────────────────────────────────────────── */
+  --border:   rgba(17, 17, 16, 0.08);  /* default borders */
+
+  /* ── Radius ───────────────────────────────────────────── */
+  --radius-card:   16px;
+  --radius-btn:    10px;
+  --radius-badge:  20px;
+}
