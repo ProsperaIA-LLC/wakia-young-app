@@ -1,1 +1,52 @@
-// Supabase session refresh middleware helper
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+import type { Database } from '@/types'
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refresh session — do NOT add logic between createServerClient and getUser
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Protect student and mentor routes
+  const { pathname } = request.nextUrl
+
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/onboarding')
+  const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/deliverables') || pathname.startsWith('/pod') || pathname.startsWith('/diary') || pathname.startsWith('/project')
+  const isMentorRoute = pathname.startsWith('/mentor')
+
+  if (!user && (isProtectedRoute || isMentorRoute)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAuthRoute && pathname !== '/onboarding') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
+}
