@@ -68,20 +68,26 @@ export default function OnboardingPage() {
 
     const market = country === 'US' ? 'USA' : 'LATAM'
 
+    const fullName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.nickname ||
+      nickname ||
+      user.email!.split('@')[0]
+
     const { error: upsertError } = await supabase
       .from('users')
       .upsert({
         id: user.id,
         email: user.email!,
-        full_name: user.user_metadata?.full_name || nickname,
-        nickname,
+        full_name: fullName,
+        nickname: nickname || fullName,
         country,
         timezone,
         market,
         avatar_url: avatar,
         parent_consent: true,
-        role: 'student',
-      })
+        role: 'student' as const,
+      } as any)
 
     if (upsertError) {
       setError('Hubo un problema guardando tus datos. Intentá de nuevo.')

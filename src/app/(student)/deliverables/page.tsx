@@ -133,31 +133,19 @@ function ReflectionForm({
     if (!q1.trim() || !q2.trim() || !q3.trim()) return
 
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
 
-    if (existingReflection?.id) {
-      await supabase.from('reflections').update({
-        q1, q2, q3,
-        status: 'submitted',
-      }).eq('id', existingReflection.id)
-    } else {
-      await supabase.from('reflections').insert({
-        user_id: user.id,
-        cohort_id: cohortId,
-        week_id: weekId,
-        q1, q2, q3,
-        status: 'submitted',
-      })
-    }
-
-    await supabase.from('activity_log').insert({
-      user_id: user.id,
-      cohort_id: cohortId,
-      action: 'reflection_submitted',
-      metadata: { week_id: weekId },
+    const res = await fetch('/api/reflections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weekId, cohortId, q1, q2, q3 }),
     })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      console.error('[ReflectionForm] submit error:', err)
+      setSaving(false)
+      return
+    }
 
     setSaving(false)
     setSaved(true)
@@ -308,28 +296,18 @@ function DeliverableForm({
     if (!content.trim()) return
     setSaving(true)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    if (existingDeliverable?.id) {
-      await supabase.from('deliverables').update({ content, status: 'submitted' }).eq('id', existingDeliverable.id)
-    } else {
-      await supabase.from('deliverables').insert({
-        user_id: user.id,
-        cohort_id: cohortId,
-        week_id: weekId,
-        content,
-        status: 'submitted',
-      })
-    }
-
-    await supabase.from('activity_log').insert({
-      user_id: user.id,
-      cohort_id: cohortId,
-      action: 'deliverable_submitted',
-      metadata: { week_id: weekId },
+    const res = await fetch('/api/deliverables', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weekId, cohortId, content }),
     })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      console.error('[DeliverableForm] submit error:', err)
+      setSaving(false)
+      return
+    }
 
     setSaving(false)
     setSaved(true)

@@ -5,7 +5,7 @@ import { updateSession } from '@/lib/supabase/middleware'
 const STUDENT_ROUTES = ['/dashboard', '/deliverables', '/pod', '/diary', '/project']
 
 // Routes that require role === 'mentor'
-const MENTOR_ROUTES = ['/pods', '/students']
+const MENTOR_ROUTES = ['/mentor']
 
 // Routes accessible only when NOT logged in
 const AUTH_ROUTES = ['/login', '/register']

@@ -23,12 +23,14 @@ export async function GET() {
   }
 
   // 3. Active enrollment + cohort
-  const { data: enrollment } = await supabase
+  const { data: enrollmentRaw } = await supabase
     .from('enrollments')
     .select('*, cohorts(*)')
     .eq('user_id', authUser.id)
     .eq('status', 'active')
     .single()
+
+  const enrollment = enrollmentRaw as any
 
   if (!enrollment?.cohorts) {
     return NextResponse.json({ error: 'No active cohort' }, { status: 404 })
@@ -68,12 +70,14 @@ export async function GET() {
     .maybeSingle()
 
   // 7. Pod membership (includes buddy_id and is_pod_leader_this_week)
-  const { data: podMembership } = await supabase
+  const { data: podMembershipRaw } = await supabase
     .from('pod_members')
     .select('*, pods(*)')
     .eq('user_id', authUser.id)
     .eq('cohort_id', cohort.id)
     .maybeSingle()
+
+  const podMembership = podMembershipRaw as any
 
   const pod = podMembership?.pods as {
     id: string; name: string; timezone_region: string | null;
@@ -268,10 +272,10 @@ export async function GET() {
       },
       currentWeek,
       currentDeliverable: currentDeliverable ?? null,
-      currentReflection: currentReflection ?? null,
+      currentReflection: currentReflection as any ?? null,
       pod: pod ?? null,
       podMembers: podMembers as any,
-      buddy,
+      buddy: buddy as any,
       recentActivity: recentActivity as any,
       streakDays,
       isPodLeader,

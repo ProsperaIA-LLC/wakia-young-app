@@ -98,10 +98,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       // Mentor notes
       const { data: notesData } = await supabase
         .from('mentor_notes')
-        .select('id, content, created_at')
+        .select('id, note, created_at')
         .eq('student_id', id)
         .order('created_at', { ascending: false })
-      if (notesData) setNotes(notesData)
+      if (notesData) setNotes(notesData.map((n: any) => ({ ...n, content: n.note })))
 
       setLoading(false)
     }
@@ -119,10 +119,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       mentor_id: user.id,
       student_id: id,
       cohort_id: cohortId,
-      content: newNote.trim(),
-    }).select('id, content, created_at').single()
+      note: newNote.trim(),
+    }).select('id, note, created_at').single()
 
-    if (data) setNotes(prev => [data, ...prev])
+    if (data) setNotes(prev => [{ ...data, content: (data as any).note }, ...prev])
     setNewNote('')
     setSavingNote(false)
   }

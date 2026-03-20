@@ -2,93 +2,92 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import type { User, Week, Deliverable, Pod, PodMember } from '@/types'
+import Link from 'next/link'
+import type { DashboardResponse, User, Week, PodMemberWithUser, ActivityFeedItem } from '@/types'
+import { Button, Badge, Avatar, StatCard } from '@/components/ui'
 
-// ── Types ──────────────────────────────────────────────────────────────
-interface PodMemberWithUser {
-  podMember: PodMember
-  user: Pick<User, 'id' | 'full_name' | 'nickname' | 'avatar_url' | 'country'>
-}
-
-interface DashData {
-  user: User
-  currentWeek: Week | null
-  currentDeliverable: Deliverable | null
-  pod: Pod | null
-  podMembers: PodMemberWithUser[]
-  streakDays: number
-  cohortName: string
-  cohortCurrentWeek: number
-  submittedCount: number
-  totalStudents: number
-  daysLeft: number
-  isSunday: boolean
-}
-
-const AVATAR_COLORS = ['var(--green)', 'var(--coral)', 'var(--teal)', 'var(--gold)', 'var(--magenta)']
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 }
 
-// ── Nav Item ───────────────────────────────────────────────────────────
-function NavItem({ icon, label, active, badge, href }: {
-  icon: string; label: string; active?: boolean; badge?: number; href: string
-}) {
+function todayLabel() {
+  const d = new Date()
+  const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+  const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+  const day = DAYS[d.getDay()]
+  return `${day.charAt(0).toUpperCase() + day.slice(1)} · ${d.getDate()} de ${MONTHS[d.getMonth()]}`
+}
+
+const LEVEL: Record<string, string> = {
+  Despertar: 'Nivel Explorer 🔍',
+  Construir: 'Nivel Builder ⚡',
+  Lanzar:    'Nivel Launcher 🚀',
+}
+
+const PHASE_EMOJI: Record<string, string> = {
+  Despertar: '💡',
+  Construir: '🛠',
+  Lanzar:    '🚀',
+}
+
+const AVATAR_COLORS = [
+  'var(--green)', 'var(--coral)', 'var(--teal)', 'var(--gold)', 'var(--magenta)',
+]
+
+// ── Tag chip for activity feed ────────────────────────────────────────────────
+
+function FeedTag({ type, label }: { type?: string; label?: string }) {
+  if (!label) return null
+  const styles: Record<string, { bg: string; color: string }> = {
+    pod:     { bg: 'var(--green-l)',  color: 'var(--green-d)' },
+    wins:    { bg: 'var(--gold-l)',   color: '#b07a10' },
+    general: { bg: 'var(--teal-l)',   color: 'var(--teal)' },
+  }
+  const s = styles[type ?? 'general'] ?? styles.general
   return (
-    <a href={href} style={{ textDecoration: 'none' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '10px 12px 10px 18px', margin: '1px 8px', borderRadius: '9px',
-        fontSize: '14px', fontWeight: active ? 700 : 500,
-        color: active ? 'var(--navy)' : 'rgba(255,255,255,0.72)',
-        background: active ? 'var(--green)' : 'transparent',
-        cursor: 'pointer', transition: 'all .15s',
-      }}>
-        <span style={{ fontSize: '15px', width: '20px', textAlign: 'center' }}>{icon}</span>
-        {label}
-        {badge ? (
-          <span style={{
-            marginLeft: 'auto', background: 'var(--coral)', color: '#fff',
-            fontSize: '10px', fontWeight: 800, padding: '2px 7px', borderRadius: '20px',
-          }}>{badge}</span>
-        ) : null}
-      </div>
-    </a>
+    <span style={{
+      display: 'inline-block', fontSize: '11px', padding: '1px 7px',
+      borderRadius: '5px', fontWeight: 700, margin: '0 2px',
+      background: s.bg, color: s.color,
+    }}>
+      #{label}
+    </span>
   )
 }
 
-// ── Próspero Chat Panel ────────────────────────────────────────────────
+// ── Próspero Chat Panel ───────────────────────────────────────────────────────
+
 function ProsperoPanel({ user, week }: { user: User | null; week: Week | null }) {
   const [open, setOpen]       = useState(false)
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
-  const [msgs, setMsgs]       = useState([{
-    role: 'assistant' as const,
+  const [msgs, setMsgs] = useState<Array<{ role: 'assistant' | 'user'; content: string }>>([{
+    role: 'assistant',
     content: `¡Hola ${user?.nickname || 'estudiante'}! Soy Próspero, tu tutor IA. Estoy acá para ayudarte con lo que necesités esta semana. ¿Por dónde empezamos? 🚀`,
   }])
-  const msgsRef = useRef<HTMLDivElement>(null)
+  const msgsEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight
-  }, [msgs])
+    msgsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [msgs, loading])
 
   async function send(text?: string) {
-    const message = text || input.trim()
+    const message = (text ?? input).trim()
     if (!message || loading) return
     setInput('')
     setLoading(true)
-    setMsgs(prev => [...prev, { role: 'user' as const, content: message }])
-
+    setMsgs(prev => [...prev, { role: 'user', content: message }])
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, weekId: week?.id || '', cohortId: '' }),
+        body: JSON.stringify({ message, weekId: week?.id ?? '', cohortId: '' }),
       })
       const data = await res.json()
-      setMsgs(prev => [...prev, { role: 'assistant', content: data.reply || 'Hubo un problema. ¿Lo intentás de nuevo?' }])
+      setMsgs(prev => [...prev, { role: 'assistant', content: data.reply ?? 'Ups, algo salió mal. ¿Lo intentás de nuevo?' }])
     } catch {
       setMsgs(prev => [...prev, { role: 'assistant', content: 'Hubo un problema de conexión. ¿Lo intentás de nuevo?' }])
     }
@@ -97,7 +96,7 @@ function ProsperoPanel({ user, week }: { user: User | null; week: Week | null })
 
   const CHIPS: Record<string, string> = {
     '🛠 Prototipo':  '¿Cómo empiezo a construir mi prototipo esta semana?',
-    '✦ Prompting':  'Enséñame prompting con Claude paso a paso',
+    '✦ Prompting':   'Enséñame prompting con Claude paso a paso',
     '🎯 Validación': '¿Cómo valido que mi problema es real?',
     '📋 Entregable': '¿Qué necesita tener mi entregable esta semana?',
   }
@@ -105,23 +104,31 @@ function ProsperoPanel({ user, week }: { user: User | null; week: Week | null })
   return (
     <>
       {/* FAB */}
-      <button onClick={() => setOpen(o => !o)} style={{
-        position: 'fixed', bottom: '28px', right: '28px', zIndex: 200,
-        width: '60px', height: '60px', borderRadius: '50%',
-        background: open ? 'var(--ink2)' : 'var(--magenta)',
-        border: 'none', cursor: 'pointer',
-        boxShadow: open ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 22px rgba(165,8,107,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'all .2s', color: '#fff', fontSize: '26px',
-      }}>
-        {!open && <div style={{
-          position: 'absolute', top: '-3px', right: '-3px', width: '14px', height: '14px',
-          borderRadius: '50%', background: 'var(--green)', border: '2.5px solid var(--bg)',
-        }} />}
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label={open ? 'Cerrar Próspero' : 'Abrir Próspero'}
+        style={{
+          position: 'fixed', bottom: '28px', right: '28px', zIndex: 200,
+          width: '60px', height: '60px', borderRadius: '50%',
+          background: open ? 'var(--ink2)' : 'var(--magenta)',
+          border: 'none', cursor: 'pointer',
+          boxShadow: open ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 22px rgba(165,8,107,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all .2s', color: '#fff', fontSize: '26px',
+          fontFamily: 'inherit',
+        }}
+      >
+        {!open && (
+          <div style={{
+            position: 'absolute', top: '-3px', right: '-3px',
+            width: '14px', height: '14px', borderRadius: '50%',
+            background: 'var(--green)', border: '2.5px solid var(--bg)',
+          }} />
+        )}
         {open ? '✕' : '✦'}
       </button>
 
-      {/* Panel */}
+      {/* Chat panel */}
       <div style={{
         position: 'fixed', bottom: '102px', right: '28px', zIndex: 199,
         width: '388px', height: '570px', background: 'var(--white)',
@@ -130,35 +137,40 @@ function ProsperoPanel({ user, week }: { user: User | null; week: Week | null })
         border: '1px solid var(--border)', overflow: 'hidden',
         transform: open ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(24px)',
         transformOrigin: 'bottom right',
-        opacity: open ? 1 : 0, pointerEvents: open ? 'all' : 'none',
+        opacity: open ? 1 : 0,
+        pointerEvents: open ? 'all' : 'none',
         transition: 'all .28s cubic-bezier(0.34,1.56,0.64,1)',
       }}>
         {/* Header */}
         <div style={{ background: 'var(--navy)', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--magenta)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, position: 'relative' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--magenta)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0, position: 'relative', color: '#fff' }}>
             ✦
             <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: '11px', height: '11px', borderRadius: '50%', background: 'var(--green)', border: '2.5px solid var(--navy)' }} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff' }}>Próspero · Tutor IA</div>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '1px' }}>Disponible ahora · Semana {week?.week_number || '?'}</div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '1px' }}>
+              Disponible ahora · Semana {week?.week_number ?? '?'}
+            </div>
           </div>
-          <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'rgba(255,255,255,0.7)', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button onClick={() => setOpen(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'rgba(255,255,255,0.7)', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}>✕</button>
         </div>
 
         {/* Chips */}
         <div style={{ padding: '10px 14px', display: 'flex', gap: '6px', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          {Object.keys(CHIPS).map(chip => (
-            <button key={chip} onClick={() => send(CHIPS[chip])} style={{ fontSize: '12px', fontWeight: 600, padding: '4px 11px', borderRadius: '20px', background: 'var(--bg)', color: 'var(--ink2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>{chip}</button>
+          {Object.entries(CHIPS).map(([label, msg]) => (
+            <button key={label} onClick={() => send(msg)} style={{ fontSize: '12px', fontWeight: 600, padding: '4px 11px', borderRadius: '20px', background: 'var(--bg)', color: 'var(--ink2)', border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+              {label}
+            </button>
           ))}
         </div>
 
         {/* Messages */}
-        <div ref={msgsRef} style={{ flex: 1, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {msgs.map((m, i) => (
             <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
               <div style={{ width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: '#fff', background: m.role === 'user' ? 'var(--teal)' : 'var(--magenta)' }}>
-                {m.role === 'user' ? getInitials(user?.nickname || 'Tú') : '✦'}
+                {m.role === 'user' ? getInitials(user?.nickname || user?.full_name || 'Yo') : '✦'}
               </div>
               <div style={{ maxWidth: '80%', display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{ padding: '10px 13px', borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px', fontSize: '13px', lineHeight: 1.55, background: m.role === 'user' ? 'var(--magenta)' : 'var(--bg)', color: m.role === 'user' ? '#fff' : 'var(--ink)' }}>
@@ -170,329 +182,479 @@ function ProsperoPanel({ user, week }: { user: User | null; week: Week | null })
           {loading && (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
               <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--magenta)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px' }}>✦</div>
-              <div style={{ background: 'var(--bg)', borderRadius: '4px 16px 16px 16px', padding: '12px 16px', display: 'flex', gap: '5px' }}>
-                {[0, 1, 2].map(i => <div key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ink4)', animation: `bounce 1.2s infinite ${i * 0.2}s` }} />)}
+              <div style={{ background: 'var(--bg)', borderRadius: '4px 16px 16px 16px', padding: '12px 16px', display: 'flex', gap: '5px', alignItems: 'center' }}>
+                {[0, 200, 400].map(delay => (
+                  <div key={delay} style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ink4)', animation: `tdBounce 1.2s infinite ${delay}ms` }} />
+                ))}
               </div>
             </div>
           )}
+          <div ref={msgsEndRef} />
         </div>
 
         {/* Input */}
         <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'flex-end', flexShrink: 0 }}>
-          <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} placeholder="Preguntale algo a Próspero..." rows={1}
-            style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: '12px', padding: '9px 13px', fontSize: '13px', color: 'var(--ink)', fontFamily: 'inherit', resize: 'none', outline: 'none', background: 'var(--bg)', maxHeight: '90px', lineHeight: 1.5 }} />
-          <button onClick={() => send()} disabled={!input.trim() || loading} style={{ width: '40px', height: '40px', borderRadius: '50%', background: !input.trim() || loading ? 'var(--ink4)' : 'var(--magenta)', border: 'none', color: '#fff', cursor: !input.trim() || loading ? 'not-allowed' : 'pointer', fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>➤</button>
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+            placeholder="Preguntale algo a Próspero..."
+            rows={1}
+            style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: '12px', padding: '9px 13px', fontSize: '13px', color: 'var(--ink)', fontFamily: 'inherit', resize: 'none', outline: 'none', background: 'var(--bg)', maxHeight: '90px', lineHeight: 1.5, transition: 'border-color .15s' }}
+            onFocus={e => { e.target.style.borderColor = 'var(--magenta)'; e.target.style.background = '#fff' }}
+            onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg)' }}
+          />
+          <button
+            onClick={() => send()}
+            disabled={!input.trim() || loading}
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: !input.trim() || loading ? 'var(--ink4)' : 'var(--magenta)', border: 'none', color: '#fff', cursor: !input.trim() || loading ? 'not-allowed' : 'pointer', fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s', fontFamily: 'inherit' }}
+          >
+            ➤
+          </button>
         </div>
       </div>
     </>
   )
 }
 
-// ── Main Dashboard ─────────────────────────────────────────────────────
+// ── Loading skeleton ──────────────────────────────────────────────────────────
+
+function LoadingScreen() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div style={{ height: '57px', background: 'rgba(245,244,240,0.96)', borderBottom: '1px solid var(--border)' }} />
+      <div style={{ flex: 1, padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {[80, 200, 100, 260].map((h, i) => (
+          <div key={i} style={{ height: h, borderRadius: '16px', background: 'var(--bg2)', animation: 'pulse 1.6s ease-in-out infinite' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main Dashboard ────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const router = useRouter()
-  const [data, setData] = useState<DashData | null>(null)
+  const [resp, setResp]       = useState<DashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) { router.push('/login'); return }
-
-      const { data: profile } = await supabase.from('users').select('*').eq('id', authUser.id).single()
-      if (!profile) { router.push('/onboarding'); return }
-
-      const { data: enrollment } = await supabase
-        .from('enrollments').select('*, cohorts(*)').eq('user_id', authUser.id).eq('status', 'active').single()
-
-      const cohort = enrollment?.cohorts as { id: string; name: string; current_week: number } | null
-
-      let currentWeek: Week | null = null
-      if (cohort) {
-        const { data: w } = await supabase.from('weeks').select('*').eq('cohort_id', cohort.id).eq('week_number', cohort.current_week).single()
-        currentWeek = w
-      }
-
-      let currentDeliverable: Deliverable | null = null
-      if (currentWeek) {
-        const { data: d } = await supabase.from('deliverables').select('*').eq('user_id', authUser.id).eq('week_id', currentWeek.id).maybeSingle()
-        currentDeliverable = d
-      }
-
-      let pod: Pod | null = null
-      let podMembers: PodMemberWithUser[] = []
-
-      if (cohort) {
-        const { data: pmData } = await supabase.from('pod_members').select('*, pods(*)').eq('user_id', authUser.id).eq('cohort_id', cohort.id).maybeSingle()
-        if (pmData?.pods) {
-          pod = pmData.pods as unknown as Pod
-          const { data: allMembers } = await supabase.from('pod_members').select('*, users(*)').eq('pod_id', pod.id)
-          podMembers = (allMembers || []).map((m: any) => ({ podMember: m, user: m.users }))
-        }
-      }
-
-      let daysLeft = 0
-      if (currentWeek?.due_date) {
-        const due = new Date(currentWeek.due_date)
-        daysLeft = Math.max(0, Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-      }
-
-      setData({
-        user: profile,
-        currentWeek,
-        currentDeliverable,
-        pod,
-        podMembers,
-        streakDays: 0,
-        cohortName: cohort?.name || 'Cohorte 1',
-        cohortCurrentWeek: cohort?.current_week || 1,
-        submittedCount: 0,
-        totalStudents: 30,
-        daysLeft,
-        isSunday: new Date().getDay() === 0,
+    fetch('/api/student/dashboard')
+      .then(r => {
+        if (r.status === 401) { router.push('/login'); return null }
+        if (r.status === 404) { router.push('/onboarding'); return null }
+        return r.json()
       })
-      setLoading(false)
-    }
-    load()
+      .then(d => { if (d) setResp(d) })
+      .catch(() => router.push('/login'))
+      .finally(() => setLoading(false))
   }, [router])
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--ink3)', fontSize: '14px' }}>
-      Cargando tu semana...
-    </div>
-  )
+  if (loading) return <LoadingScreen />
+  if (!resp) return null
 
-  if (!data) return null
+  const { data, isReflectionUnlocked, daysUntilDeadline } = resp
+  const { user, cohort, currentWeek, currentDeliverable, currentReflection,
+          pod, podMembers, buddy, recentActivity, streakDays, isPodLeader } = data
 
-  const { user, currentWeek, currentDeliverable, pod, podMembers, streakDays, cohortName, cohortCurrentWeek, daysLeft, isSunday } = data
-  const nickname = user.nickname || user.full_name.split(' ')[0]
+  const nickname   = user.nickname || user.full_name.split(' ')[0]
+  const avatarChar = user.avatar_url && user.avatar_url.length <= 2 ? user.avatar_url : null
   const isSubmitted = currentDeliverable?.status === 'submitted' || currentDeliverable?.status === 'reviewed'
+  const isSunday   = new Date().getDay() === 0
+  const reflectionAvailable = isReflectionUnlocked && isSubmitted
 
-  const today = new Date()
-  const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-  const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-  const todayStr = `${DAYS[today.getDay()].charAt(0).toUpperCase() + DAYS[today.getDay()].slice(1)} · ${today.getDate()} de ${MONTHS[today.getMonth()]}`
-  const phaseEmoji: Record<string, string> = { Despertar: '💡', Construir: '🛠', Lanzar: '🚀' }
+  // Greeting sub-text
+  const greetingSub = isSubmitted
+    ? '¡Ya entregaste esta semana! Mirá cómo va tu pod 👀'
+    : currentWeek
+      ? `Tenés ${daysUntilDeadline} día${daysUntilDeadline !== 1 ? 's' : ''} para entregar tu entregable. ¡Vamos!`
+      : 'Bienvenido/a al programa. ¡Empecemos!'
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "-apple-system,'Segoe UI',system-ui,sans-serif" }}>
-
-      {/* ── SIDEBAR ── */}
-      <div style={{ width: '236px', minWidth: '236px', background: 'var(--navy)', display: 'flex', flexDirection: 'column', minHeight: '100vh', flexShrink: 0 }}>
-        <div style={{ padding: '22px 18px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <div style={{ width: '34px', height: '34px', background: 'var(--green)', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '16px', color: 'var(--navy)', flexShrink: 0 }}>P</div>
-            <div style={{ fontWeight: 800, fontSize: '17px', color: '#fff', letterSpacing: '-0.4px' }}>Prospera</div>
+    <>
+      {/* ── TOPBAR ── */}
+      <div style={{
+        background: 'rgba(245,244,240,0.96)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--border)',
+        padding: '12px 28px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'sticky', top: 0, zIndex: 50,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ background: 'var(--navy)', color: 'rgba(255,255,255,0.65)', fontSize: '12px', fontWeight: 600, padding: '5px 14px', borderRadius: '20px' }}>
+            Semana{' '}
+            <span style={{ color: 'var(--green)', fontWeight: 800 }}>{cohort.current_week}</span>
+            {' '}de 6 · {new Date().toLocaleDateString('es', { weekday: 'long' }).replace(/^\w/, c => c.toUpperCase())}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', paddingLeft: '44px' }}>Young AI · {cohortName}</div>
+          {currentWeek && (
+            <span style={{ fontSize: '12px', color: 'var(--ink3)', fontWeight: 500 }}>
+              Fase {currentWeek.phase} {PHASE_EMOJI[currentWeek.phase] ?? ''}
+            </span>
+          )}
         </div>
 
-        <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '16px 18px 6px' }}>Principal</div>
-        <NavItem icon="◈" label="Mi semana"    active href="/dashboard" />
-        <NavItem icon="□" label="Entregables"  href="/deliverables" badge={isSubmitted ? 0 : 1} />
-        <NavItem icon="◎" label="Mi diario"    href="/diary" />
-
-        <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '16px 18px 6px' }}>Comunidad</div>
-        <NavItem icon="⬡" label="Mi pod"            href="/pod" />
-        <NavItem icon="▷" label="Sesión del sábado" href="#" />
-
-        <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '16px 18px 6px' }}>Mi proyecto</div>
-        <NavItem icon="⊕" label="Prototipo" href="/project" />
-
-        <div style={{ flex: 1 }} />
-
-        <div style={{ padding: '14px 10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          {pod && (
-            <a href="/pod" style={{ textDecoration: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', cursor: 'pointer' }}>
-                <div style={{ display: 'flex' }}>
-                  {podMembers.slice(0, 4).map((m, i) => (
-                    <div key={m.user.id} style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 800, color: '#fff', background: AVATAR_COLORS[i % AVATAR_COLORS.length], border: '2px solid var(--navy)', marginRight: '-5px', flexShrink: 0 }}>
-                      {getInitials(m.user.nickname || m.user.full_name)}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginLeft: '9px' }}>
-                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', fontWeight: 600 }}>{pod.name}</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{podMembers.length} miembros</div>
-                </div>
-              </div>
-            </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {streakDays > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--gold-l)', border: '1px solid rgba(224,163,38,0.3)', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, color: 'var(--ink2)' }}>
+              🔥 {streakDays} día{streakDays !== 1 ? 's' : ''} seguido{streakDays !== 1 ? 's' : ''}
+            </div>
           )}
+          <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: avatarChar ? '18px' : '13px', fontWeight: 800, color: '#fff', cursor: 'default', userSelect: 'none' }}>
+            {avatarChar ?? getInitials(nickname)}
+          </div>
         </div>
       </div>
 
-      {/* ── MAIN ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      {/* ── CONTENT ── */}
+      <div style={{ padding: '24px 28px 40px' }}>
 
-        {/* Topbar */}
-        <div style={{ background: 'rgba(245,244,240,0.96)', borderBottom: '1px solid var(--border)', padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ background: 'var(--navy)', color: 'rgba(255,255,255,0.65)', fontSize: '12px', fontWeight: 600, padding: '5px 14px', borderRadius: '20px' }}>
-              Semana <span style={{ color: 'var(--green)', fontWeight: 800 }}>{cohortCurrentWeek}</span> de 6 · {DAYS[today.getDay()].charAt(0).toUpperCase() + DAYS[today.getDay()].slice(1)}
-            </div>
-            {currentWeek && <div style={{ fontSize: '12px', color: 'var(--ink3)', fontWeight: 500 }}>Fase {currentWeek.phase} {phaseEmoji[currentWeek.phase] || ''}</div>}
+        {/* Greeting */}
+        <div style={{ marginBottom: '22px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
+          <div>
+            <p style={{ fontSize: '13px', color: 'var(--ink3)', marginBottom: '3px' }}>{todayLabel()}</p>
+            <h1 style={{ fontWeight: 800, fontSize: '28px', color: 'var(--ink)', lineHeight: 1.1, margin: 0 }}>
+              Hola, {nickname} 👋
+            </h1>
+            <p style={{ fontSize: '13px', color: 'var(--ink3)', marginTop: '4px' }}>{greetingSub}</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {streakDays > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--gold-l)', border: '1px solid rgba(224,163,38,0.3)', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, color: 'var(--ink2)' }}>
-                🔥 {streakDays} días seguidos
-              </div>
-            )}
-            <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', cursor: 'pointer' }}>
-              {user.avatar_url && user.avatar_url.length <= 2 ? user.avatar_url : getInitials(nickname)}
+          {currentWeek && (
+            <div style={{ flexShrink: 0, background: 'var(--navy)', color: 'var(--green)', fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+              {LEVEL[currentWeek.phase] ?? 'Nivel Explorer 🔍'}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '24px 28px 40px', flex: 1, overflowY: 'auto' }}>
-
-          {/* Greeting */}
-          <div style={{ marginBottom: '22px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: '13px', color: 'var(--ink3)', marginBottom: '3px' }}>{todayStr}</div>
-              <div style={{ fontWeight: 800, fontSize: '28px', color: 'var(--ink)', lineHeight: 1.1 }}>Hola, {nickname} 👋</div>
-              <div style={{ fontSize: '13px', color: 'var(--ink3)', marginTop: '4px' }}>
-                {isSubmitted ? '¡Ya entregaste esta semana! Mirá cómo va tu pod.' : currentWeek ? `Tenés ${daysLeft} días para entregar.` : 'Bienvenido al programa.'}
-              </div>
+        {/* Hero Banner */}
+        {currentWeek && (
+          <div style={{ background: 'var(--navy)', borderRadius: '18px', padding: '26px 28px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '24px', position: 'relative', overflow: 'hidden' }}>
+            {/* Glows */}
+            <div style={{ position: 'absolute', right: '-30px', top: '-30px', width: '250px', height: '250px', background: 'radial-gradient(circle,rgba(0,200,150,0.15) 0%,transparent 65%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', left: '40%', bottom: '-40px', width: '180px', height: '180px', background: 'radial-gradient(circle,rgba(0,140,165,0.08) 0%,transparent 70%)', pointerEvents: 'none' }} />
+            {/* Ghost week number */}
+            <div style={{ position: 'absolute', right: '155px', top: '-18px', fontSize: '170px', fontWeight: 900, color: 'rgba(255,255,255,0.03)', lineHeight: 1, pointerEvents: 'none', userSelect: 'none' }}>
+              {cohort.current_week}
             </div>
-            {currentWeek && (
-              <div style={{ background: 'var(--navy)', color: 'var(--green)', fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '20px' }}>
-                {currentWeek.phase === 'Despertar' ? 'Nivel Explorer 🔍' : currentWeek.phase === 'Construir' ? 'Nivel Builder ⚡' : 'Nivel Launcher 🚀'}
-              </div>
-            )}
-          </div>
 
-          {/* Hero */}
-          {currentWeek && (
-            <div style={{ background: 'var(--navy)', borderRadius: '18px', padding: '26px 28px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '24px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', right: '-30px', top: '-30px', width: '250px', height: '250px', background: 'radial-gradient(circle,rgba(0,200,150,0.15) 0%,transparent 65%)', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', right: '155px', top: '-18px', fontSize: '170px', fontWeight: 900, color: 'rgba(255,255,255,0.03)', lineHeight: 1, pointerEvents: 'none', userSelect: 'none' }}>{cohortCurrentWeek}</div>
-              <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--green)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <div style={{ width: '6px', height: '6px', background: 'var(--green)', borderRadius: '50%' }} />
-                  Fase {currentWeek.phase} · Semana {cohortCurrentWeek} de 6
-                </div>
-                <div style={{ fontWeight: 800, fontSize: '24px', color: '#fff', lineHeight: 1.15, marginBottom: '10px' }}>{currentWeek.title}</div>
-                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, fontStyle: 'italic', maxWidth: '400px' }}>"{currentWeek.opening_question}"</div>
+            {/* Left */}
+            <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--green)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <div style={{ width: '6px', height: '6px', background: 'var(--green)', borderRadius: '50%', flexShrink: 0 }} />
+                Fase {currentWeek.phase} · Semana {cohort.current_week} de 6
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0, position: 'relative', zIndex: 1 }}>
-                <div style={{ fontWeight: 900, fontSize: '58px', color: 'var(--green)', lineHeight: 1 }}>{daysLeft}</div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>días para entregar</div>
-                <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', marginTop: '14px' }}>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} style={{ height: '5px', borderRadius: '3px', width: i < cohortCurrentWeek - 1 ? '22px' : i === cohortCurrentWeek - 1 ? '22px' : '16px', background: i < cohortCurrentWeek - 1 ? 'var(--green)' : i === cohortCurrentWeek - 1 ? 'rgba(0,200,150,0.45)' : 'rgba(255,255,255,0.14)' }} />
-                  ))}
-                </div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', textAlign: 'right', marginTop: '4px' }}>Semana {cohortCurrentWeek} de 6</div>
-              </div>
+              <h2 style={{ fontWeight: 800, fontSize: '24px', color: '#fff', lineHeight: 1.15, marginBottom: '10px', margin: '0 0 10px' }}>
+                {currentWeek.title}
+              </h2>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, fontStyle: 'italic', maxWidth: '400px', margin: 0 }}>
+                "{currentWeek.opening_question}"
+              </p>
             </div>
-          )}
 
-          {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            {[
-              { n: isSubmitted ? '✓' : '0', color: isSubmitted ? 'var(--green)' : 'var(--coral)', l: 'Estado de tu entregable esta semana' },
-              { n: streakDays > 0 ? `${streakDays} 🔥` : '—', color: 'var(--gold)', l: 'Días consecutivos activo en el programa' },
-              { n: `${data.submittedCount}`, color: 'var(--green)', l: `De ${data.totalStudents} estudiantes ya entregaron esta semana` },
-            ].map(({ n, color, l }, i) => (
-              <div key={i} style={{ background: 'var(--white)', borderRadius: '16px', border: '1px solid var(--border)', padding: '18px 20px' }}>
-                <div style={{ fontWeight: 800, fontSize: '32px', lineHeight: 1, marginBottom: '5px', color }}>{n}</div>
-                <div style={{ fontSize: '12px', color: 'var(--ink3)', lineHeight: 1.4 }}>{l}</div>
+            {/* Right: days countdown + week dots */}
+            <div style={{ textAlign: 'right', flexShrink: 0, position: 'relative', zIndex: 1 }}>
+              <div style={{ fontWeight: 900, fontSize: '58px', color: 'var(--green)', lineHeight: 1 }}>
+                {daysUntilDeadline}
               </div>
-            ))}
-          </div>
-
-          {/* Deliverable + Video */}
-          {currentWeek && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-              <div style={{ background: 'var(--white)', borderRadius: '16px', border: `2px ${isSubmitted ? 'solid' : 'dashed'} ${isSubmitted ? 'var(--green)' : 'var(--bg2)'}`, padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '4px 12px', borderRadius: '20px', background: isSubmitted ? 'var(--green-l)' : 'var(--coral-l)', color: isSubmitted ? 'var(--green-d)' : 'var(--coral)' }}>
-                    {isSubmitted ? 'Entregado ✓' : 'Pendiente'}
-                  </span>
-                  {!isSubmitted && <span style={{ fontSize: '12px', color: 'var(--coral)', fontWeight: 700 }}>⏱ {daysLeft} días</span>}
-                </div>
-                <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)', marginBottom: '10px', lineHeight: 1.3 }}>{currentWeek.deliverable_description}</div>
-                <div style={{ fontSize: '13px', color: 'var(--ink2)', lineHeight: 1.6, background: 'var(--bg)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', borderLeft: '3px solid var(--green)' }}>
-                  <strong>Señal de éxito:</strong> {currentWeek.success_signal}
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <a href="/deliverables" style={{ textDecoration: 'none' }}>
-                    <button style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: isSubmitted ? 'var(--teal)' : 'var(--green)', color: isSubmitted ? '#fff' : 'var(--navy)', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {isSubmitted ? '✓ Ver entregable' : '↑ Subir entregable'}
-                    </button>
-                  </a>
-                </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>
+                día{daysUntilDeadline !== 1 ? 's' : ''} para entregar
               </div>
-
-              <div style={{ background: 'var(--navy)', borderRadius: '16px', padding: '22px', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', right: '14px', bottom: '14px', fontSize: '52px', color: 'rgba(0,200,150,0.1)' }}>▶</div>
-                <div style={{ fontSize: '11px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, marginBottom: '8px' }}>Video del mentor · Semana {cohortCurrentWeek}</div>
-                <div style={{ fontWeight: 800, fontSize: '16px', color: '#fff', lineHeight: 1.3, marginBottom: '6px' }}>{currentWeek.title}</div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginBottom: '16px' }}>{currentWeek.tools?.join(' + ') || 'Herramientas de la semana'}</div>
-                {currentWeek.mentor_video_url
-                  ? <a href={currentWeek.mentor_video_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}><button style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'var(--green)', color: 'var(--navy)', border: 'none', borderRadius: '9px', padding: '9px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>▶ Ver ahora</button></a>
-                  : <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Video disponible pronto</div>
-                }
-              </div>
-            </div>
-          )}
-
-          {/* Reflection */}
-          <div style={{ background: 'var(--mag-l)', border: '1px solid rgba(165,8,107,0.15)', borderRadius: '16px', padding: '18px', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <div style={{ width: '38px', height: '38px', background: 'var(--magenta)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>✦</div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--ink)' }}>Reflexión del domingo — Método finlandés</div>
-                <div style={{ fontSize: '12px', color: 'var(--ink3)', marginTop: '1px' }}>Se activa junto al entregable · No se puede saltear · Forma parte del cierre de semana</div>
-              </div>
-            </div>
-            <div style={{ background: 'rgba(165,8,107,0.07)', borderRadius: '9px', padding: '11px 14px', fontSize: '13px', color: 'var(--ink2)', display: 'flex', alignItems: 'center', gap: '9px' }}>
-              {isSunday && isSubmitted
-                ? <a href="/deliverables" style={{ color: 'var(--magenta)', fontWeight: 700, textDecoration: 'none' }}>✦ Reflexión disponible — respondé las dos preguntas →</a>
-                : '🔒 Disponible el domingo — dos preguntas de aprendizaje que aparecen al subir tu entregable'}
-            </div>
-          </div>
-
-          {/* Pod Members */}
-          {pod && podMembers.length > 0 && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)' }}>Mi Pod · {pod.name} 🌎</div>
-                {pod.discord_channel_url && (
-                  <a href={pod.discord_channel_url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: 'var(--teal)', fontWeight: 600, textDecoration: 'none' }}>Abrir Discord →</a>
-                )}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(podMembers.length, 4)}, 1fr)`, gap: '10px', marginBottom: '24px' }}>
-                {podMembers.map((m, i) => {
-                  const isMe = m.user.id === user.id
-                  const nick = m.user.nickname || m.user.full_name.split(' ')[0]
+              <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', marginTop: '14px' }}>
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const done  = i < cohort.current_week - 1
+                  const now   = i === cohort.current_week - 1
                   return (
-                    <div key={m.user.id} style={{ background: isMe ? '#fafffe' : 'var(--white)', borderRadius: '14px', padding: '16px 12px', border: `1.5px solid ${isMe ? 'var(--green)' : 'var(--border)'}`, textAlign: 'center', cursor: 'pointer', position: 'relative' }}>
-                      {isMe && <div style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--green)', color: 'var(--navy)', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase' }}>Tú</div>}
-                      <div style={{ width: '46px', height: '46px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: m.user.avatar_url && m.user.avatar_url.length <= 2 ? '22px' : '15px', fontWeight: 800, color: '#fff', background: AVATAR_COLORS[i % AVATAR_COLORS.length], margin: '0 auto 9px', position: 'relative' }}>
-                        {m.user.avatar_url && m.user.avatar_url.length <= 2 ? m.user.avatar_url : getInitials(nick)}
-                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--white)', position: 'absolute', bottom: 0, right: 0, background: '#22c55e' }} />
-                      </div>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)', marginBottom: '2px' }}>{nick}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--ink3)', marginBottom: '7px' }}>{m.user.country}{m.podMember.is_pod_leader_this_week ? ' · Pod Leader ✦' : ''}</div>
-                      <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', padding: '3px 10px', borderRadius: '20px', display: 'inline-block', background: isMe ? 'var(--green-l)' : 'var(--teal-l)', color: isMe ? 'var(--green-d)' : 'var(--teal)' }}>Activo</span>
-                    </div>
+                    <div key={i} style={{ height: '5px', borderRadius: '3px', width: now || done ? '22px' : '16px', background: done ? 'var(--green)' : now ? 'rgba(0,200,150,0.45)' : 'rgba(255,255,255,0.14)' }} />
                   )
                 })}
               </div>
-            </>
-          )}
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', textAlign: 'right', marginTop: '4px' }}>
+                Semana {cohort.current_week} de 6
+              </div>
+            </div>
+          </div>
+        )}
 
+        {/* 3 Stat Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+          <StatCard
+            label="Entregable esta semana"
+            value={isSubmitted ? '✓' : '0'}
+            color={isSubmitted ? 'green' : 'coral'}
+            sublabel={isSubmitted ? 'entregado y listo' : 'aún sin entregar'}
+          />
+          <StatCard
+            label="Días seguidos activo/a"
+            value={streakDays > 0 ? `${streakDays} 🔥` : '—'}
+            color="gold"
+            sublabel="en el programa"
+          />
+          <StatCard
+            label="Progreso del programa"
+            value={`${cohort.current_week}/6`}
+            color="green"
+            sublabel={`Semana ${cohort.current_week} de ${cohort.current_week === 6 ? '6 · ¡Última!' : '6'}`}
+          />
         </div>
+
+        {/* Deliverable + Video 2-col */}
+        {currentWeek && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+
+            {/* Deliverable card */}
+            <div style={{ background: 'var(--white)', borderRadius: '16px', border: `2px ${isSubmitted ? 'solid' : 'dashed'} ${isSubmitted ? 'var(--green)' : 'var(--bg2)'}`, padding: '20px', transition: 'border-color .2s, background .2s', cursor: 'default' }}
+              onMouseEnter={e => { if (!isSubmitted) { (e.currentTarget as HTMLElement).style.borderColor = 'var(--green)'; (e.currentTarget as HTMLElement).style.background = '#f0fef9' } }}
+              onMouseLeave={e => { if (!isSubmitted) { (e.currentTarget as HTMLElement).style.borderColor = 'var(--bg2)'; (e.currentTarget as HTMLElement).style.background = 'var(--white)' } }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <Badge variant={isSubmitted ? 'green' : 'coral'} dot>
+                  {isSubmitted ? 'Entregado ✓' : 'Pendiente'}
+                </Badge>
+                {!isSubmitted && (
+                  <span style={{ fontSize: '12px', color: 'var(--coral)', fontWeight: 700 }}>
+                    ⏱ Dom 23:59 · {daysUntilDeadline} día{daysUntilDeadline !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+
+              <h3 style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)', marginBottom: '10px', lineHeight: 1.3, margin: '0 0 10px' }}>
+                {currentWeek.deliverable_description}
+              </h3>
+
+              <div style={{ fontSize: '13px', color: 'var(--ink2)', lineHeight: 1.6, background: 'var(--bg)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', borderLeft: '3px solid var(--green)' }}>
+                <strong style={{ color: 'var(--ink)' }}>Señal de éxito:</strong>{' '}
+                {currentWeek.success_signal}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <Link href="/deliverables" style={{ textDecoration: 'none' }}>
+                  <Button variant={isSubmitted ? 'teal' : 'primary'} size="md">
+                    {isSubmitted ? '✓ Ver entregable' : '↑ Subir entregable'}
+                  </Button>
+                </Link>
+                {currentWeek.notion_guide_url && (
+                  <a href={currentWeek.notion_guide_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                    <Button variant="secondary" size="md">Ver guía técnica</Button>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Video card */}
+            <div style={{ background: 'var(--navy)', borderRadius: '16px', padding: '22px', cursor: 'pointer', position: 'relative', overflow: 'hidden', transition: 'transform .2s, box-shadow .2s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 28px rgba(14,42,71,0.22)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '' }}
+            >
+              <div style={{ position: 'absolute', right: '14px', bottom: '14px', fontSize: '52px', color: 'rgba(0,200,150,0.1)', userSelect: 'none' }}>▶</div>
+              <p style={{ fontSize: '11px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, marginBottom: '8px', margin: '0 0 8px' }}>
+                Video del mentor · Semana {cohort.current_week}
+              </p>
+              <h3 style={{ fontWeight: 800, fontSize: '16px', color: '#fff', lineHeight: 1.3, marginBottom: '6px', margin: '0 0 6px' }}>
+                {currentWeek.title}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginBottom: '16px', margin: '0 0 16px' }}>
+                {currentWeek.tools?.join(' + ') || 'Herramientas de la semana'}
+              </p>
+              {currentWeek.mentor_video_url ? (
+                <a href={currentWeek.mentor_video_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                  <Button variant="primary" size="sm">▶ Ver ahora</Button>
+                </a>
+              ) : (
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>Video disponible pronto</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Reflection card */}
+        <div style={{ background: 'var(--mag-l)', border: '1px solid rgba(165,8,107,0.15)', borderRadius: '16px', padding: '18px', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ width: '38px', height: '38px', background: 'var(--magenta)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, color: '#fff' }}>
+              ✦
+            </div>
+            <div>
+              <p style={{ fontWeight: 800, fontSize: '15px', color: 'var(--ink)', margin: 0 }}>
+                Reflexión del domingo — Método finlandés
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--ink3)', marginTop: '1px', margin: '1px 0 0' }}>
+                Se activa junto al entregable · No se puede saltear · Forma parte del cierre de semana
+              </p>
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(165,8,107,0.07)', borderRadius: '9px', padding: '11px 14px', fontSize: '13px', color: 'var(--ink2)', display: 'flex', alignItems: 'center', gap: '9px' }}>
+            {reflectionAvailable ? (
+              <Link href="/deliverables" style={{ color: 'var(--magenta)', fontWeight: 700, textDecoration: 'none' }}>
+                ✦ Reflexión disponible — respondé las dos preguntas →
+              </Link>
+            ) : !isSunday ? (
+              '🔒 Disponible el domingo — dos preguntas de aprendizaje que aparecen al subir tu entregable'
+            ) : !isSubmitted ? (
+              '🔒 Primero subí tu entregable — luego se habilita la reflexión'
+            ) : (
+              '🔒 Disponible el domingo — dos preguntas de aprendizaje que aparecen al subir tu entregable'
+            )}
+          </div>
+        </div>
+
+        {/* Pod section */}
+        {pod && podMembers.length > 0 && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)', margin: 0 }}>
+                Mi Pod · {pod.name} 🌎
+              </h2>
+              {pod.discord_channel_url && (
+                <a href={pod.discord_channel_url} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: 'var(--teal)', fontWeight: 600, textDecoration: 'none' }}>
+                  Abrir canal en Discord →
+                </a>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(podMembers.length, 4)}, 1fr)`, gap: '10px', marginBottom: '24px' }}>
+              {podMembers.map((m: PodMemberWithUser, i: number) => {
+                const isMe    = m.user.id === user.id
+                const isBuddy = m.user.id === buddy?.id
+                const nick    = m.user.nickname || m.user.full_name.split(' ')[0]
+                const emojiAv = m.user.avatar_url && m.user.avatar_url.length <= 2 ? m.user.avatar_url : null
+                const inactive = (m as any).hoursInactive > 48
+                const submitted = (m as any).hasSubmittedThisWeek
+                const online   = (m as any).isOnline
+
+                return (
+                  <div
+                    key={m.user.id}
+                    style={{
+                      background: isMe ? '#fafffe' : 'var(--white)',
+                      borderRadius: '14px', padding: '16px 12px',
+                      border: `1.5px solid ${isMe ? 'var(--green)' : 'var(--border)'}`,
+                      textAlign: 'center', cursor: 'default', position: 'relative',
+                      transition: 'border-color .2s, transform .2s, box-shadow .2s',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLElement
+                      if (!isMe) el.style.borderColor = 'var(--teal)'
+                      el.style.transform = 'translateY(-2px)'
+                      el.style.boxShadow = '0 5px 18px rgba(14,42,71,0.07)'
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLElement
+                      if (!isMe) el.style.borderColor = 'var(--border)'
+                      el.style.transform = ''
+                      el.style.boxShadow = ''
+                    }}
+                  >
+                    {/* "Tú" tag */}
+                    {isMe && (
+                      <div style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--green)', color: 'var(--navy)', fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        Tú
+                      </div>
+                    )}
+
+                    {/* Alert pip for inactive */}
+                    {inactive && !isMe && (
+                      <div style={{ position: 'absolute', top: '9px', right: '9px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--coral)', border: '2.5px solid var(--white)' }} />
+                    )}
+
+                    {/* Avatar with online dot */}
+                    <div style={{ margin: '0 auto 9px', width: 'fit-content' }}>
+                      <Avatar
+                        name={nick}
+                        emoji={emojiAv ?? undefined}
+                        size="lg"
+                        isOnline={online}
+                        style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] } as React.CSSProperties}
+                      />
+                    </div>
+
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 2px' }}>{nick}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--ink3)', margin: '0 0 7px' }}>
+                      {m.user.country}
+                      {m.podMember.is_pod_leader_this_week ? ' · Pod Leader ✦' : ''}
+                      {isBuddy ? ' · Tu buddy' : ''}
+                    </p>
+
+                    {/* Status chip */}
+                    {isMe ? (
+                      <Badge variant="green" size="sm">{isPodLeader ? 'Pod Leader' : 'Activo/a'}</Badge>
+                    ) : isBuddy ? (
+                      <Badge variant="coral" size="sm">Buddy</Badge>
+                    ) : submitted ? (
+                      <Badge variant="teal" size="sm">Entregó ✓</Badge>
+                    ) : inactive ? (
+                      <Badge variant="coral" size="sm">Sin actividad</Badge>
+                    ) : (
+                      <Badge variant="teal" size="sm">Activo/a</Badge>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Activity Feed */}
+        {recentActivity && recentActivity.length > 0 && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)', margin: 0 }}>
+                Lo que está pasando 👀
+              </h2>
+              <Link href="/pod" style={{ fontSize: '13px', color: 'var(--teal)', fontWeight: 600, textDecoration: 'none' }}>
+                Ver todo →
+              </Link>
+            </div>
+
+            <div style={{ background: 'var(--white)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '24px' }}>
+              {(recentActivity as ActivityFeedItem[]).map((item, i) => {
+                const feedName = item.user.nickname || item.user.full_name?.split(' ')[0] || 'Alguien'
+                const emojiAv  = item.user.avatar_url && item.user.avatar_url.length <= 2 ? item.user.avatar_url : null
+                const colors   = ['var(--coral)', 'var(--teal)', 'var(--magenta)', 'var(--navy2)', 'var(--gold)', 'var(--green)']
+                const color    = colors[i % colors.length]
+                const isLast   = i === recentActivity.length - 1
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{ display: 'grid', gridTemplateColumns: '40px 1fr 64px', gap: '12px', alignItems: 'start', padding: '13px 18px', borderBottom: isLast ? 'none' : '1px solid var(--border)', cursor: 'default', transition: 'background .12s' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '' }}
+                  >
+                    {/* Avatar */}
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: emojiAv ? '18px' : '13px', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                      {emojiAv ?? getInitials(feedName)}
+                    </div>
+
+                    {/* Text */}
+                    <div style={{ fontSize: '13px', color: 'var(--ink2)', lineHeight: 1.55, paddingTop: '2px' }}>
+                      <strong style={{ color: 'var(--ink)' }}>{feedName}</strong>{' '}
+                      {item.message.replace(feedName, '').trim()}
+                      {item.tagLabel && (
+                        <FeedTag type={item.tagType} label={item.tagLabel} />
+                      )}
+                    </div>
+
+                    {/* Time */}
+                    <div style={{ fontSize: '11px', color: 'var(--ink4)', whiteSpace: 'nowrap', paddingTop: '4px', textAlign: 'right' }}>
+                      {item.timeAgo}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+
       </div>
 
+      {/* Próspero FAB */}
       <ProsperoPanel user={user} week={currentWeek} />
 
-      <style>{`@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }`}</style>
-    </div>
+      <style>{`
+        @keyframes tdBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+      `}</style>
+    </>
   )
 }

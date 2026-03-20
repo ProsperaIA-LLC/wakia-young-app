@@ -304,7 +304,7 @@ CREATE TABLE deliverables (
   updated_at        timestamptz NOT NULL DEFAULT now(),
 
   UNIQUE (user_id, week_id),
-  CONSTRAINT deliverables_status_check CHECK (status IN ('pending', 'submitted', 'reviewed'))
+  CONSTRAINT deliverables_status_check CHECK (status IN ('not_started', 'draft', 'pending', 'submitted', 'reviewed'))
 );
 
 CREATE TRIGGER deliverables_updated_at
@@ -345,13 +345,18 @@ CREATE TABLE reflections (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   week_id           uuid NOT NULL REFERENCES weeks(id) ON DELETE CASCADE,
+  cohort_id         uuid REFERENCES cohorts(id),
   deliverable_id    uuid REFERENCES deliverables(id),
-  answer_q1         text,                      -- 'Lo que aprendí esta semana fue...'
-  answer_q2         text,                      -- 'La semana que viene cambio...'
+  q1                text,                      -- '¿Qué aprendiste esta semana?'
+  q2                text,                      -- '¿Dónde te bloqueaste?'
+  q3                text,                      -- '¿Qué harías diferente?'
+  status            text DEFAULT 'draft',      -- 'draft' | 'submitted'
+  mentor_feedback   text,
   submitted_at      timestamptz,
   created_at        timestamptz NOT NULL DEFAULT now(),
 
-  UNIQUE (user_id, week_id)
+  UNIQUE (user_id, week_id),
+  CONSTRAINT reflections_status_check CHECK (status IN ('draft', 'submitted'))
 );
 
 ALTER TABLE reflections ENABLE ROW LEVEL SECURITY;
@@ -369,6 +374,21 @@ CREATE POLICY "Mentors can read all reflections"
     )
   );
 
+CREATE POLICY "Mentors can write feedback on reflections"
+  ON reflections FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM users u
+      WHERE u.id = auth.uid() AND u.role IN ('mentor', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users u
+      WHERE u.id = auth.uid() AND u.role IN ('mentor', 'admin')
+    )
+  );
+
 -- Function: enforce Sunday-only rule at DB level
 CREATE OR REPLACE FUNCTION check_reflection_is_sunday()
 RETURNS TRIGGER AS $$
@@ -377,12 +397,12 @@ BEGIN
   IF EXTRACT(DOW FROM now()) != 0 THEN
     RAISE EXCEPTION 'Reflections can only be submitted on Sundays';
   END IF;
-  -- Must have submitted deliverable first
+  -- Must have submitted deliverable first (submitted OR reviewed both count)
   IF NOT EXISTS (
     SELECT 1 FROM deliverables d
     WHERE d.user_id = NEW.user_id
       AND d.week_id = NEW.week_id
-      AND d.status = 'submitted'
+      AND d.status IN ('submitted', 'reviewed')
   ) THEN
     RAISE EXCEPTION 'You must submit your deliverable before reflecting';
   END IF;
@@ -607,7 +627,7 @@ CREATE POLICY "Mentors can read all summaries"
 
 CREATE TABLE scholarship_applications (
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  cohort_id           uuid NOT NULL REFERENCES cohorts(id),
+  cohort_id           uuid REFERENCES cohorts(id),             -- nullable: assigned by mentor after review
   applicant_name      text NOT NULL,
   applicant_email     text NOT NULL,
   applicant_age       integer NOT NULL,

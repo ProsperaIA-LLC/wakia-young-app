@@ -435,7 +435,7 @@ export async function loadProsperoContext(
   }
 
   // Extract pod name from nested join
-  const podData = podMemberRes.data?.pods as { name: string } | null
+  const podData = (podMemberRes.data as any)?.pods as { name: string } | null
   const pod = podData ? { name: podData.name } : null
 
   return {

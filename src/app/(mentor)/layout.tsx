@@ -3,9 +3,9 @@
 import { usePathname, useRouter } from 'next/navigation'
 
 const NAV = [
-  { href: '/dashboard', label: 'Panel',      icon: '📊' },
-  { href: '/pods',      label: 'Pods',       icon: '🫂' },
-  { href: '/students',  label: 'Estudiantes', icon: '👥' },
+  { href: '/mentor/dashboard', label: 'Panel',      icon: '📊' },
+  { href: '/mentor/pods',      label: 'Pods',       icon: '🫂' },
+  { href: '/mentor/students',  label: 'Estudiantes', icon: '👥' },
 ]
 
 export default function MentorLayout({ children }: { children: React.ReactNode }) {
@@ -68,7 +68,7 @@ export default function MentorLayout({ children }: { children: React.ReactNode }
             Gestión
           </p>
           {NAV.map(item => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+            const isActive = pathname === item.href || (item.href !== '/mentor/dashboard' && pathname.startsWith(item.href))
             return (
               <button
                 key={item.href}

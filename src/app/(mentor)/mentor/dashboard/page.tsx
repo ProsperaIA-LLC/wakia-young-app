@@ -201,7 +201,7 @@ export default function MentorDashboardPage() {
             {alerts.filter(a => a.severity === 'red').slice(0, 3).map(a => (
               <button
                 key={a.id}
-                onClick={() => router.push(`/students/${a.studentId}`)}
+                onClick={() => router.push(`/mentor/students/${a.studentId}`)}
                 style={{
                   background: 'white',
                   border: '1.5px solid var(--coral)',
@@ -295,7 +295,7 @@ export default function MentorDashboardPage() {
         {filtered.map(s => (
           <div
             key={s.enrollment.id}
-            onClick={() => router.push(`/students/${s.enrollment.user_id}`)}
+            onClick={() => router.push(`/mentor/students/${s.enrollment.user_id}`)}
             style={{
               display: 'grid',
               gridTemplateColumns: '2fr 1fr 1fr 1fr 80px',

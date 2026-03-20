@@ -143,7 +143,7 @@ export default function PodsPage() {
                 {pod.members.map(m => (
                   <div
                     key={m.user_id}
-                    onClick={() => router.push(`/students/${m.user_id}`)}
+                    onClick={() => router.push(`/mentor/students/${m.user_id}`)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '10px 18px', cursor: 'pointer',

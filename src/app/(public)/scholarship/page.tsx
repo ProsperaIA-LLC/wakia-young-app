@@ -28,18 +28,24 @@ export default function ScholarshipPage() {
     setError(null)
 
     const supabase = createClient()
+    // Map form fields to DB schema fields (scholarship_applications table)
+    const motivationLetter = [
+      form.reason,
+      form.project_idea ? `\n\nIdea de proyecto: ${form.project_idea}` : '',
+      form.monthly_income ? `\nIngreso familiar mensual: ${form.monthly_income}` : '',
+    ].join('')
+
     const { error: insertError } = await supabase
       .from('scholarship_applications')
       .insert({
-        full_name: form.full_name,
-        email: form.email,
-        age: parseInt(form.age) || null,
-        country: form.country,
-        reason: form.reason,
-        project_idea: form.project_idea,
-        monthly_income: form.monthly_income,
+        cohort_id: '00000000-0000-0000-0000-000000000000', // placeholder — updated by mentor
+        applicant_name: form.full_name,
+        applicant_email: form.email,
+        applicant_age: parseInt(form.age) || 0,
+        applicant_country: form.country,
+        motivation_letter: motivationLetter,
         status: 'pending',
-      })
+      } as any)
 
     if (insertError) {
       setError('Hubo un error al enviar tu solicitud. Intentá de nuevo.')
