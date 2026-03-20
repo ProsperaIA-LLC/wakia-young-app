@@ -3,9 +3,9 @@
 import { usePathname, useRouter } from 'next/navigation'
 
 const NAV_COHORT = [
-  { href: '/mentor/dashboard', label: 'Dashboard', icon: '◈' },
-  { href: '/mentor/pods',      label: 'Pods',       icon: '⬡' },
-  { href: '/mentor/students',  label: 'Estudiantes', icon: '◑' },
+  { href: '/mentor/dashboard', label: 'Dashboard',    icon: '◈' },
+  { href: '/mentor/pods',      label: 'Pods',          icon: '⬡' },
+  { href: '/mentor/students',  label: 'Estudiantes',  icon: '◑' },
 ]
 
 const NAV_SESSION = [
@@ -70,100 +70,141 @@ function NavItem({
 
 export default function MentorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
 
   function isActive(href: string) {
     return pathname === href || (href !== '/mentor/dashboard' && pathname.startsWith(href))
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+    <>
+      <style>{`
+        .ml-root { display: flex; min-height: 100vh; background: var(--bg); }
+        .ml-sidebar {
+          width: 220px; min-width: 220px; background: var(--navy);
+          display: flex; flex-direction: column;
+          position: sticky; top: 0; height: 100vh;
+          overflow-y: auto; flex-shrink: 0;
+        }
+        .ml-main { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
+        .ml-bottom-nav { display: none; }
 
-      {/* ── Sidebar ── */}
-      <nav style={{
-        width: 220, minWidth: 220, background: 'var(--navy)',
-        display: 'flex', flexDirection: 'column',
-        position: 'sticky', top: 0, height: '100vh',
-        overflowY: 'auto', flexShrink: 0,
-      }}>
-        {/* Logo */}
-        <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 3 }}>
-            <div style={{
-              width: 32, height: 32, background: 'var(--magenta)', borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0,
-            }}>
-              M
+        @media (max-width: 768px) {
+          .ml-sidebar { display: none; }
+          .ml-main { padding-bottom: 72px; }
+          .ml-bottom-nav {
+            display: flex;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 60px;
+            background: var(--navy);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            z-index: 100;
+            align-items: stretch;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+          }
+        }
+      `}</style>
+
+      <div className="ml-root">
+
+        {/* ── Sidebar (desktop) ── */}
+        <nav className="ml-sidebar">
+          <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 3 }}>
+              <div style={{
+                width: 32, height: 32, background: 'var(--magenta)', borderRadius: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0,
+              }}>M</div>
+              <span style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Prospera</span>
             </div>
-            <span style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Prospera</span>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', paddingLeft: 41 }}>
+              Panel Mentor
+            </div>
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', paddingLeft: 41 }}>
-            Panel Mentor
-          </div>
-        </div>
 
-        {/* Mentor badge */}
-        <div style={{
-          margin: '12px 12px 0',
-          background: 'rgba(165,8,107,0.2)',
-          border: '1px solid rgba(165,8,107,0.35)',
-          borderRadius: 8, padding: '8px 12px',
-        }}>
           <div style={{
-            fontSize: 10, color: 'rgba(165,8,107,0.8)',
-            fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-            marginBottom: 2,
+            margin: '12px 12px 0',
+            background: 'rgba(165,8,107,0.2)',
+            border: '1px solid rgba(165,8,107,0.35)',
+            borderRadius: 8, padding: '8px 12px',
           }}>
-            Mentor activo
+            <div style={{
+              fontSize: 10, color: 'rgba(165,8,107,0.8)',
+              fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2,
+            }}>
+              Mentor activo
+            </div>
+            <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>
+              Panel de control
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>
-            Panel de control
+
+          <div style={{ flex: 1, paddingBottom: 8 }}>
+            <NavSection label="Cohorte" />
+            {NAV_COHORT.map(item => (
+              <NavItem key={item.href} {...item} isActive={isActive(item.href)} />
+            ))}
+            <NavSection label="Sesión" />
+            {NAV_SESSION.map(item => (
+              <NavItem key={item.href} {...item} isActive={isActive(item.href)} />
+            ))}
+            <NavSection label="Admin" />
+            {NAV_ADMIN.map(item => (
+              <NavItem key={item.href} {...item} isActive={isActive(item.href)} />
+            ))}
           </div>
-        </div>
 
-        {/* Nav */}
-        <div style={{ flex: 1, paddingBottom: 8 }}>
-          <NavSection label="Cohorte" />
-          {NAV_COHORT.map(item => (
-            <NavItem key={item.href} {...item} isActive={isActive(item.href)} />
-          ))}
+          <div style={{ padding: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <button
+              onClick={async () => {
+                const { createClient } = await import('@/lib/supabase/client')
+                await createClient().auth.signOut()
+                window.location.href = '/login'
+              }}
+              style={{
+                width: '100%', padding: '8px 12px',
+                background: 'rgba(255,255,255,0.06)',
+                border: 'none', borderRadius: 8,
+                color: 'rgba(255,255,255,0.45)', fontSize: 12,
+                fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </nav>
 
-          <NavSection label="Sesión" />
-          {NAV_SESSION.map(item => (
-            <NavItem key={item.href} {...item} isActive={isActive(item.href)} />
-          ))}
+        {/* ── Main ── */}
+        <main className="ml-main">{children}</main>
 
-          <NavSection label="Admin" />
-          {NAV_ADMIN.map(item => (
-            <NavItem key={item.href} {...item} isActive={isActive(item.href)} />
-          ))}
-        </div>
+        {/* ── Bottom nav (mobile only) — shows 3 main cohort items ── */}
+        <nav className="ml-bottom-nav">
+          {NAV_COHORT.map(item => {
+            const active = isActive(item.href)
+            return (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                style={{
+                  flex: 1, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: '3px',
+                  border: 'none', background: 'transparent',
+                  color: active ? 'var(--magenta)' : 'rgba(255,255,255,0.4)',
+                  cursor: 'pointer', padding: '4px 2px',
+                  transition: 'color 0.15s', fontSize: '20px',
+                }}
+              >
+                <span style={{ lineHeight: 1 }}>{item.icon}</span>
+                <span style={{ fontSize: '9px', fontWeight: active ? 700 : 500 }}>
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
+        </nav>
 
-        {/* Sign out */}
-        <div style={{ padding: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <button
-            onClick={async () => {
-              const { createClient } = await import('@/lib/supabase/client')
-              await createClient().auth.signOut()
-              window.location.href = '/login'
-            }}
-            style={{
-              width: '100%', padding: '8px 12px',
-              background: 'rgba(255,255,255,0.06)',
-              border: 'none', borderRadius: 8,
-              color: 'rgba(255,255,255,0.45)', fontSize: 12,
-              fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-            }}
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Main ── */}
-      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-        {children}
-      </main>
-    </div>
+      </div>
+    </>
   )
 }

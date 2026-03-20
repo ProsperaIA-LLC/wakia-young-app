@@ -135,18 +135,34 @@ export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoCha
         .tp-scrollbar::-webkit-scrollbar { width: 4px; }
         .tp-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .tp-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+        .tp-fab {
+          position: fixed; bottom: 28px; right: 28px;
+          width: 60px; height: 60px;
+        }
+        .tp-panel {
+          position: fixed;
+          bottom: 102px; right: 28px;
+          width: 388px; height: 570px;
+        }
+        @media (max-width: 768px) {
+          .tp-fab { bottom: 80px; right: 16px; }
+          .tp-panel {
+            bottom: 148px;
+            right: 16px;
+            width: calc(100vw - 32px);
+            max-width: 388px;
+            height: min(520px, calc(100dvh - 220px));
+          }
+        }
       `}</style>
 
       {/* FAB */}
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Abrir tutor Próspero"
+        className="tp-fab"
         style={{
-          position: 'fixed',
-          bottom: 28,
-          right: 28,
-          width: 60,
-          height: 60,
           borderRadius: '50%',
           background: 'var(--magenta, #e91e8c)',
           border: 'none',
@@ -183,13 +199,8 @@ export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoCha
       {/* Chat Panel */}
       {open && (
         <div
-          className="tp-panel-enter"
+          className="tp-panel-enter tp-panel"
           style={{
-            position: 'fixed',
-            bottom: 102,
-            right: 28,
-            width: 388,
-            height: 570,
             borderRadius: 20,
             background: '#1a1a2e',
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
