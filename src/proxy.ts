@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { updateSession } from '@/lib/supabase/session'
 
 // Routes that require an authenticated session (student)
 const STUDENT_ROUTES = ['/dashboard', '/deliverables', '/pod', '/diary', '/project']
