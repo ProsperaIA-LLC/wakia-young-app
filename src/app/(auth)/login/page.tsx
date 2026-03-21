@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type Tab = 'login' | 'register'
+type Step = 'email' | 'code'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,33 +13,46 @@ export default function LoginPage() {
   const [tab, setTab] = useState<Tab>('login')
 
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [step, setStep] = useState<Step>('email')
+  const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [regForm, setRegForm] = useState({ fullName: '', email: '', country: '', age: '' })
+
   useEffect(() => {
     if (searchParams.get('error') === 'auth') {
-      setError('El link expiró o ya fue usado. Pedí uno nuevo.')
+      setError('El código expiró o ya fue usado. Pedí uno nuevo.')
     }
   }, [searchParams])
 
-  const [regForm, setRegForm] = useState({ fullName: '', email: '', country: '', age: '' })
-
-  async function sendMagicLink() {
+  async function sendOtp() {
     if (!email) return
     setLoading(true)
     setError(null)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
+    const { error } = await supabase.auth.signInWithOtp({ email })
     if (error) {
-      setError('No pudimos enviar el link. Verificá tu email e intentá de nuevo.')
+      setError('No pudimos enviar el código. Verificá tu email e intentá de nuevo.')
     } else {
-      setSent(true)
+      setStep('code')
     }
     setLoading(false)
+  }
+
+  async function verifyOtp() {
+    if (!otp || otp.length < 6) return
+    setLoading(true)
+    setError(null)
+    const supabase = createClient()
+    const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
+    if (error) {
+      setError('Código incorrecto o expirado. Revisá tu email e intentá de nuevo.')
+      setLoading(false)
+      return
+    }
+    router.push('/dashboard')
+    router.refresh()
   }
 
   function handleRegister() {
@@ -56,6 +70,17 @@ export default function LoginPage() {
     display: 'block', fontSize: '12px', fontWeight: 700,
     color: 'var(--ink2)', marginBottom: '6px',
     textTransform: 'uppercase', letterSpacing: '0.05em',
+  }
+
+  const btnPrimary: React.CSSProperties = {
+    display: 'block', width: '100%', background: 'var(--navy)',
+    color: '#fff', border: 'none', borderRadius: '10px',
+    padding: '13px', fontSize: '15px', fontWeight: 700,
+    cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit',
+  }
+
+  const btnDisabled: React.CSSProperties = {
+    ...btnPrimary, background: 'var(--ink4)', cursor: 'not-allowed',
   }
 
   return (
@@ -151,7 +176,7 @@ export default function LoginPage() {
           justifyContent: 'center',
         }}>
           <div style={{ fontWeight: 800, fontSize: '22px', color: 'var(--ink)', marginBottom: '6px' }}>
-            Bienvenido/a 👋
+            Bienvenido/a
           </div>
           <div style={{ fontSize: '14px', color: 'var(--ink3)', marginBottom: '32px', lineHeight: 1.5 }}>
             Ingresá a tu portal o registrate para la próxima cohorte.
@@ -163,7 +188,7 @@ export default function LoginPage() {
             background: 'var(--bg)', borderRadius: '10px', padding: '3px',
           }}>
             {(['login', 'register'] as Tab[]).map((t, i) => (
-              <button key={t} onClick={() => setTab(t)} style={{
+              <button key={t} onClick={() => { setTab(t); setStep('email'); setError(null) }} style={{
                 flex: 1, padding: '10px 8px', borderRadius: '8px', border: 'none',
                 background: tab === t ? 'var(--white)' : 'transparent',
                 fontSize: '13px', fontWeight: 600,
@@ -180,16 +205,16 @@ export default function LoginPage() {
           {/* ── Login tab ── */}
           {tab === 'login' && (
             <>
-              {!sent ? (
+              {step === 'email' ? (
                 <div style={{
                   background: 'var(--bg)', borderRadius: '12px',
                   padding: '16px', border: '1.5px dashed var(--bg2)',
                 }}>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink2)', marginBottom: '4px' }}>
-                    🔗 Acceso por link mágico
+                    Acceso por código
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--ink3)', lineHeight: 1.5, marginBottom: '12px' }}>
-                    Te mandamos un link a tu email. Sin contraseña, sin complicaciones.
+                    Te enviamos un código de 6 dígitos a tu email. Sin contraseña.
                   </div>
                   <div style={{ marginBottom: '12px' }}>
                     <input
@@ -199,7 +224,7 @@ export default function LoginPage() {
                       autoComplete="email"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && sendMagicLink()}
+                      onKeyDown={e => e.key === 'Enter' && sendOtp()}
                       placeholder="tu@email.com"
                       style={{
                         width: '100%', background: 'var(--white)',
@@ -217,34 +242,69 @@ export default function LoginPage() {
                     }}>{error}</p>
                   )}
                   <button
-                    onClick={sendMagicLink}
+                    onClick={sendOtp}
                     disabled={loading || !email}
-                    style={{
-                      display: 'block', width: '100%',
-                      background: loading || !email ? 'var(--ink4)' : 'var(--navy)',
-                      color: '#fff', border: 'none', borderRadius: '10px',
-                      padding: '13px', fontSize: '15px', fontWeight: 700,
-                      cursor: loading || !email ? 'not-allowed' : 'pointer',
-                      transition: 'all .15s', fontFamily: 'inherit',
-                    }}
+                    style={loading || !email ? btnDisabled : btnPrimary}
                   >
-                    {loading ? 'Enviando...' : 'Enviar link de acceso →'}
+                    {loading ? 'Enviando...' : 'Enviar código →'}
                   </button>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <div style={{
-                    width: '56px', height: '56px', background: 'var(--green-l)',
-                    borderRadius: '50%', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '26px', margin: '0 auto 16px',
-                  }}>✉️</div>
-                  <div style={{ fontWeight: 800, fontSize: '18px', color: 'var(--ink)', marginBottom: '8px' }}>
-                    ¡Revisá tu email!
+                <div style={{
+                  background: 'var(--bg)', borderRadius: '12px',
+                  padding: '16px', border: '1.5px dashed var(--bg2)',
+                }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink2)', marginBottom: '4px' }}>
+                    Revisá tu email
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--ink3)', lineHeight: 1.6 }}>
-                    Te mandamos un link de acceso. Expira en 10 minutos.<br />
-                    No olvides revisar tu carpeta de spam.
+                  <div style={{ fontSize: '12px', color: 'var(--ink3)', lineHeight: 1.5, marginBottom: '12px' }}>
+                    Enviamos un código de 6 dígitos a <strong>{email}</strong>. Expira en 10 minutos.
                   </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <input
+                      id="login-otp"
+                      name="otp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={otp}
+                      onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onKeyDown={e => e.key === 'Enter' && verifyOtp()}
+                      placeholder="123456"
+                      style={{
+                        width: '100%', background: 'var(--white)',
+                        border: '1.5px solid var(--border)', borderRadius: '10px',
+                        padding: '12px 14px', fontSize: '24px', color: 'var(--ink)',
+                        outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace',
+                        letterSpacing: '0.3em', textAlign: 'center',
+                      }}
+                    />
+                  </div>
+                  {error && (
+                    <p style={{
+                      fontSize: '12px', color: 'var(--coral)',
+                      background: 'var(--coral-l)', borderRadius: '8px',
+                      padding: '8px 12px', marginBottom: '10px',
+                    }}>{error}</p>
+                  )}
+                  <button
+                    onClick={verifyOtp}
+                    disabled={loading || otp.length < 6}
+                    style={loading || otp.length < 6 ? btnDisabled : btnPrimary}
+                  >
+                    {loading ? 'Verificando...' : 'Entrar →'}
+                  </button>
+                  <button
+                    onClick={() => { setStep('email'); setOtp(''); setError(null) }}
+                    style={{
+                      display: 'block', width: '100%', background: 'transparent',
+                      color: 'var(--ink3)', border: 'none', borderRadius: '10px',
+                      padding: '10px', fontSize: '13px', fontWeight: 600,
+                      cursor: 'pointer', marginTop: '8px', fontFamily: 'inherit',
+                    }}
+                  >
+                    ← Cambiar email
+                  </button>
                 </div>
               )}
 
