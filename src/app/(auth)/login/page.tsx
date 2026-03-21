@@ -27,7 +27,7 @@ export default function LoginPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) {
-      setError('No pudimos enviar el link. Verificá tu email e intentá de nuevo.')
+      setError(`Error: ${error.message}`)
     } else {
       setSent(true)
     }
