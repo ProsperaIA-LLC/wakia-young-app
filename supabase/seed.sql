@@ -212,3 +212,50 @@ BEGIN
   raise notice '  semana 1  : %', v_week1_id;
 
 END $$;
+
+-- ============================================================
+-- MENTOR — Heiddy (fundadora)
+-- ============================================================
+-- IMPORTANTE: Heiddy debe haber hecho login al menos una vez
+-- antes de ejecutar este bloque, para que exista en public.users.
+-- ============================================================
+
+DO $$
+DECLARE
+  v_cohort_id  uuid;
+  v_heiddy_id  uuid;
+BEGIN
+
+  -- Buscar su usuario
+  select id into v_heiddy_id
+  from public.users
+  where email = 'soyheiddy@gmail.com';
+
+  if v_heiddy_id is null then
+    raise exception
+      'Usuario soyheiddy@gmail.com no encontrado. '
+      'Heiddy debe iniciar sesión en la app primero para crear su perfil.';
+  end if;
+
+  -- Asignar rol mentor (accede a rutas /mentor y /dashboard)
+  update public.users
+  set role = 'mentor'
+  where id = v_heiddy_id;
+
+  -- Buscar la cohorte activa
+  select id into v_cohort_id
+  from public.cohorts
+  where status = 'active'
+  order by created_at desc
+  limit 1;
+
+  -- Enrollment en la cohorte activa (para que también vea el dashboard de estudiante)
+  if v_cohort_id is not null then
+    insert into public.enrollments (user_id, cohort_id, market, price_paid_usd, is_scholarship, status)
+    values (v_heiddy_id, v_cohort_id, 'LATAM', 0, true, 'active')
+    on conflict (user_id, cohort_id) do nothing;
+  end if;
+
+  raise notice '✓ Heiddy configurada como mentor. user_id: %', v_heiddy_id;
+
+END $$;
