@@ -51,8 +51,7 @@ function LoginPageInner() {
       setLoading(false)
       return
     }
-    router.push('/dashboard')
-    router.refresh()
+    window.location.href = '/dashboard'
   }
 
   function handleRegister() {
