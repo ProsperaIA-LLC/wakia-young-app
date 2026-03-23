@@ -234,16 +234,57 @@ function LoadingScreen() {
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 
+function NoCohortScreen() {
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '32px 20px', background: 'var(--bg)',
+    }}>
+      <div style={{ maxWidth: '440px', width: '100%', textAlign: 'center' }}>
+        <div style={{
+          width: '72px', height: '72px', borderRadius: '20px',
+          background: 'var(--navy)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', margin: '0 auto 24px', fontSize: '32px',
+        }}>🚀</div>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', marginBottom: '10px' }}>
+          Tu lugar está confirmado
+        </h1>
+        <p style={{ fontSize: '15px', color: 'var(--ink3)', lineHeight: 1.65, marginBottom: '28px' }}>
+          Tu cohorte todavía no está activa. Te vamos a avisar por email cuando arranque el programa y tu dashboard se active.
+        </p>
+        <div style={{
+          background: 'var(--white)', borderRadius: '14px', padding: '18px 20px',
+          border: '1.5px solid var(--border)', textAlign: 'left',
+        }}>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
+            Mientras tanto podés
+          </p>
+          {[
+            '📩 Revisar el email de bienvenida',
+            '📅 Guardar las fechas del programa',
+            '🤝 Unirte al Discord del programa',
+          ].map(item => (
+            <p key={item} style={{ fontSize: '14px', color: 'var(--ink2)', marginBottom: '6px', fontWeight: 500 }}>
+              {item}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [resp, setResp]       = useState<DashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [noCohort, setNoCohort] = useState(false)
 
   useEffect(() => {
     fetch('/api/student/dashboard')
       .then(r => {
         if (r.status === 401) { router.push('/login'); return null }
-        if (r.status === 404) { router.push('/onboarding'); return null }
+        if (r.status === 404) { setNoCohort(true); return null }
         return r.json()
       })
       .then(d => { if (d) setResp(d) })
@@ -252,6 +293,7 @@ export default function DashboardPage() {
   }, [router])
 
   if (loading) return <LoadingScreen />
+  if (noCohort) return <NoCohortScreen />
   if (!resp) return null
 
   const { data, isReflectionUnlocked, daysUntilDeadline } = resp
