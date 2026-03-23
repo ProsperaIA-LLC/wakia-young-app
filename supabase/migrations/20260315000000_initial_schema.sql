@@ -350,7 +350,11 @@ alter table public.pod_summaries          enable row level security;
 alter table public.scholarship_applications enable row level security;
 alter table public.competency_scores      enable row level security;
 
--- users: read own row; mentors/admins can read all students
+-- users
+drop policy if exists "users_select_own"    on public.users;
+drop policy if exists "users_select_mentor" on public.users;
+drop policy if exists "users_insert_own"    on public.users;
+drop policy if exists "users_update_own"    on public.users;
 create policy "users_select_own" on public.users for select
   using (auth.uid() = id);
 create policy "users_select_mentor" on public.users for select
@@ -363,7 +367,9 @@ create policy "users_insert_own" on public.users for insert
 create policy "users_update_own" on public.users for update
   using (auth.uid() = id);
 
--- cohorts: all authenticated users can read
+-- cohorts
+drop policy if exists "cohorts_select"      on public.cohorts;
+drop policy if exists "cohorts_write_admin" on public.cohorts;
 create policy "cohorts_select" on public.cohorts for select
   using (auth.role() = 'authenticated');
 create policy "cohorts_write_admin" on public.cohorts for all
@@ -371,21 +377,24 @@ create policy "cohorts_write_admin" on public.cohorts for all
     select 1 from public.users u where u.id = auth.uid() and u.role = 'admin'
   ));
 
--- pods: readable by cohort members
+-- pods
+drop policy if exists "pods_select" on public.pods;
 create policy "pods_select" on public.pods for select
   using (exists (
     select 1 from public.enrollments e
     where e.cohort_id = pods.cohort_id and e.user_id = auth.uid()
   ));
 
--- pod_members: readable by cohort members
+-- pod_members
+drop policy if exists "pod_members_select" on public.pod_members;
 create policy "pod_members_select" on public.pod_members for select
   using (exists (
     select 1 from public.enrollments e
     where e.cohort_id = pod_members.cohort_id and e.user_id = auth.uid()
   ));
 
--- weeks: readable by enrolled students and mentors
+-- weeks
+drop policy if exists "weeks_select" on public.weeks;
 create policy "weeks_select" on public.weeks for select
   using (exists (
     select 1 from public.enrollments e
@@ -394,7 +403,9 @@ create policy "weeks_select" on public.weeks for select
     select 1 from public.users u where u.id = auth.uid() and u.role in ('mentor', 'admin')
   ));
 
--- enrollments: read own
+-- enrollments
+drop policy if exists "enrollments_select_own"    on public.enrollments;
+drop policy if exists "enrollments_select_mentor" on public.enrollments;
 create policy "enrollments_select_own" on public.enrollments for select
   using (user_id = auth.uid());
 create policy "enrollments_select_mentor" on public.enrollments for select
@@ -402,7 +413,11 @@ create policy "enrollments_select_mentor" on public.enrollments for select
     select 1 from public.users u where u.id = auth.uid() and u.role in ('mentor', 'admin')
   ));
 
--- deliverables: read/write own; mentors read all
+-- deliverables
+drop policy if exists "deliverables_select_own"    on public.deliverables;
+drop policy if exists "deliverables_select_mentor" on public.deliverables;
+drop policy if exists "deliverables_insert_own"    on public.deliverables;
+drop policy if exists "deliverables_update_own"    on public.deliverables;
 create policy "deliverables_select_own" on public.deliverables for select
   using (user_id = auth.uid());
 create policy "deliverables_select_mentor" on public.deliverables for select
@@ -414,7 +429,11 @@ create policy "deliverables_insert_own" on public.deliverables for insert
 create policy "deliverables_update_own" on public.deliverables for update
   using (user_id = auth.uid());
 
--- reflections: read/write own; mentors read all
+-- reflections
+drop policy if exists "reflections_select_own"    on public.reflections;
+drop policy if exists "reflections_select_mentor" on public.reflections;
+drop policy if exists "reflections_insert_own"    on public.reflections;
+drop policy if exists "reflections_update_own"    on public.reflections;
 create policy "reflections_select_own" on public.reflections for select
   using (user_id = auth.uid());
 create policy "reflections_select_mentor" on public.reflections for select
@@ -426,11 +445,15 @@ create policy "reflections_insert_own" on public.reflections for insert
 create policy "reflections_update_own" on public.reflections for update
   using (user_id = auth.uid());
 
--- chat_messages: own only
+-- chat_messages
+drop policy if exists "chat_messages_own" on public.chat_messages;
 create policy "chat_messages_own" on public.chat_messages for all
   using (user_id = auth.uid());
 
--- activity_log: own read; insert open to authenticated (API writes on behalf of user)
+-- activity_log
+drop policy if exists "activity_log_select_own"    on public.activity_log;
+drop policy if exists "activity_log_select_mentor" on public.activity_log;
+drop policy if exists "activity_log_insert"        on public.activity_log;
 create policy "activity_log_select_own" on public.activity_log for select
   using (user_id = auth.uid());
 create policy "activity_log_select_mentor" on public.activity_log for select
@@ -440,7 +463,9 @@ create policy "activity_log_select_mentor" on public.activity_log for select
 create policy "activity_log_insert" on public.activity_log for insert
   with check (user_id = auth.uid());
 
--- mentor_alerts: mentors read/write; students read own
+-- mentor_alerts
+drop policy if exists "mentor_alerts_select_own" on public.mentor_alerts;
+drop policy if exists "mentor_alerts_mentor"     on public.mentor_alerts;
 create policy "mentor_alerts_select_own" on public.mentor_alerts for select
   using (student_id = auth.uid());
 create policy "mentor_alerts_mentor" on public.mentor_alerts for all
@@ -448,13 +473,16 @@ create policy "mentor_alerts_mentor" on public.mentor_alerts for all
     select 1 from public.users u where u.id = auth.uid() and u.role in ('mentor', 'admin')
   ));
 
--- mentor_notes: mentors only
+-- mentor_notes
+drop policy if exists "mentor_notes_mentor" on public.mentor_notes;
 create policy "mentor_notes_mentor" on public.mentor_notes for all
   using (exists (
     select 1 from public.users u where u.id = auth.uid() and u.role in ('mentor', 'admin')
   ));
 
--- pod_summaries: pod members can read; pod leader can insert
+-- pod_summaries
+drop policy if exists "pod_summaries_select" on public.pod_summaries;
+drop policy if exists "pod_summaries_insert" on public.pod_summaries;
 create policy "pod_summaries_select" on public.pod_summaries for select
   using (exists (
     select 1 from public.pod_members pm
@@ -463,7 +491,9 @@ create policy "pod_summaries_select" on public.pod_summaries for select
 create policy "pod_summaries_insert" on public.pod_summaries for insert
   with check (pod_leader_id = auth.uid());
 
--- scholarship_applications: insert by anyone; read by admins
+-- scholarship_applications
+drop policy if exists "scholarship_insert"       on public.scholarship_applications;
+drop policy if exists "scholarship_select_admin" on public.scholarship_applications;
 create policy "scholarship_insert" on public.scholarship_applications for insert
   with check (true);
 create policy "scholarship_select_admin" on public.scholarship_applications for select
@@ -471,7 +501,9 @@ create policy "scholarship_select_admin" on public.scholarship_applications for 
     select 1 from public.users u where u.id = auth.uid() and u.role = 'admin'
   ));
 
--- competency_scores: students read own; mentors read/write
+-- competency_scores
+drop policy if exists "competency_select_own" on public.competency_scores;
+drop policy if exists "competency_mentor"     on public.competency_scores;
 create policy "competency_select_own" on public.competency_scores for select
   using (student_id = auth.uid());
 create policy "competency_mentor" on public.competency_scores for all
