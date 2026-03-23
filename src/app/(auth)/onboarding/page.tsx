@@ -72,7 +72,7 @@ export default function OnboardingPage() {
     }
     setStep('success')
     setLoading(false)
-    setTimeout(() => router.push('/dashboard'), 2000)
+    setTimeout(() => { window.location.href = '/dashboard' }, 2000)
   }
 
   const fieldLabel: React.CSSProperties = {
