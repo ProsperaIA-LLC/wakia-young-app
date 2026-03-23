@@ -63,10 +63,18 @@ export default function OnboardingPage() {
       .upsert({
         id: user.id, email: user.email!, full_name: fullName,
         nickname: nickname || fullName, country, timezone, market,
-        avatar_url: avatar, parent_consent: true, role: 'student' as const,
-      } as any)
+        avatar_url: avatar, parent_consent: true, role: 'student',
+      }, { onConflict: 'id' })
     if (upsertError) {
-      setError('Hubo un problema guardando tus datos. Intentá de nuevo.')
+      setError(`Error guardando perfil: ${upsertError.message}`)
+      setLoading(false)
+      return
+    }
+    // Verify the save actually worked
+    const { data: saved, error: readError } = await supabase
+      .from('users').select('nickname').eq('id', user.id).single()
+    if (readError || !saved?.nickname) {
+      setError(`No se pudo verificar el perfil guardado. ${readError?.message ?? 'Intentá de nuevo.'}`)
       setLoading(false)
       return
     }
