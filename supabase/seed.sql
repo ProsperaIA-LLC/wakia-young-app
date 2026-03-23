@@ -16,7 +16,7 @@
 
 DO $$
 DECLARE
-  v_user_email    text    := 'TU_EMAIL_AQUI';   -- ← cambiá esto
+  v_user_email    text    := 'jessicajanecolmenarespaz@gmail.com';
   v_user_id       uuid;
   v_cohort_id     uuid;
   v_pod_id        uuid;
