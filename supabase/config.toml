@@ -11,7 +11,7 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
@@ -40,13 +40,5 @@ email.enable_confirmations = false
 # The function uses the SERVICE_ROLE key internally, so it is still secure.
 verify_jwt = false
 
-# ── Scheduled invocation ──────────────────────────────────────────────────────
-# Runs every hour on the hour.
-# Supabase CLI >= 1.150 supports [crons] in config.toml.
-# If your CLI version does not support this, use the SQL migration below
-# (supabase/migrations/20260320000000_cron_check_alerts.sql) instead.
-
-[[crons]]
-name        = "check-alerts-hourly"
-schedule    = "0 * * * *"
-function    = "check-alerts"
+# NOTE: [[crons]] is defined via SQL migration instead of config.toml
+# See supabase/migrations/20260320000000_cron_check_alerts.sql
