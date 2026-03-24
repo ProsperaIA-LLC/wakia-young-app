@@ -690,7 +690,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Próspero FAB */}
-      <ProsperoPanel user={user} week={currentWeek} cohortId={resp.cohort.id} />
+      <ProsperoPanel user={user} week={currentWeek} cohortId={cohort.id} />
 
       <style>{`
         @keyframes tdBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
