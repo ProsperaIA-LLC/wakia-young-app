@@ -60,7 +60,7 @@ function FeedTag({ type, label }: { type?: string; label?: string }) {
 
 // ── Próspero Chat Panel ───────────────────────────────────────────────────────
 
-function ProsperoPanel({ user, week }: { user: User | null; week: Week | null }) {
+function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week | null; cohortId: string }) {
   const [open, setOpen]       = useState(false)
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -84,7 +84,7 @@ function ProsperoPanel({ user, week }: { user: User | null; week: Week | null })
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, weekId: week?.id ?? '', cohortId: '' }),
+        body: JSON.stringify({ message, weekId: week?.id ?? '', cohortId }),
       })
       const data = await res.json()
       setMsgs(prev => [...prev, { role: 'assistant', content: data.reply ?? 'Ups, algo salió mal. ¿Lo intentás de nuevo?' }])
@@ -690,7 +690,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Próspero FAB */}
-      <ProsperoPanel user={user} week={currentWeek} />
+      <ProsperoPanel user={user} week={currentWeek} cohortId={resp.cohort.id} />
 
       <style>{`
         @keyframes tdBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
