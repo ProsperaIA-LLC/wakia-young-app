@@ -27,7 +27,7 @@ import type {
 
 const MAX_DAILY_MESSAGES = 15          // hard limit per student per day
 const MAX_HISTORY_MESSAGES = 20        // how many past messages to send as context
-const MODEL = 'claude-sonnet-4-20250514'
+const MODEL = 'claude-sonnet-4-6'
 const MAX_TOKENS = 1000
 
 // ── ANTHROPIC CLIENT (singleton) ─────────────────────────────────────────────
