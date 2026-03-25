@@ -29,34 +29,39 @@ export default function PodsPage() {
     fetch('/api/mentor/dashboard')
       .then(r => r.json())
       .then(data => {
-        // Build pods from mentor dashboard data
-        const enrichedPods = (data.pods || []).map((pod: any) => {
-          const cohort = (data.cohorts || []).find((c: any) => c.id === pod.cohort_id)
-          const members = (data.students || []).filter((s: any) => {
-            return (pod.pod_members || []).some((pm: any) => pm.user_id === s.enrollment.user_id)
-          }).map((s: any) => {
-            const pm = (pod.pod_members || []).find((m: any) => m.user_id === s.enrollment.user_id)
-            return {
-              user_id: s.enrollment.user_id,
-              user: s.user,
-              is_pod_leader_this_week: pm?.is_pod_leader_this_week ?? false,
-              hasSubmitted: s.hasSubmitted,
-              hoursInactive: s.hoursInactive,
-              isOnline: s.hoursInactive < 0.25,
-            }
-          })
+        const currentWeek = data.cohort?.current_week ?? 1
+        const cohortName  = data.cohort?.name ?? ''
 
-          return {
-            id: pod.id,
-            name: pod.name,
-            timezone_region: pod.timezone_region ?? null,
-            discord_channel_url: pod.discord_channel_url ?? null,
-            cohort_id: pod.cohort_id,
-            cohortName: cohort?.name ?? '',
-            members,
+        // Group students by pod_id
+        const podMap = new Map<string, PodData>()
+        for (const s of (data.students ?? [])) {
+          if (!s.pod_id) continue
+          if (!podMap.has(s.pod_id)) {
+            podMap.set(s.pod_id, {
+              id: s.pod_id,
+              name: s.pod_name ?? 'Pod',
+              timezone_region: null,
+              discord_channel_url: null,
+              cohort_id: s.cohort_id,
+              cohortName,
+              members: [],
+            })
           }
-        })
-        setPods(enrichedPods)
+          podMap.get(s.pod_id)!.members.push({
+            user_id: s.user_id,
+            user: {
+              id: s.user_id,
+              full_name: s.full_name ?? 'Estudiante',
+              nickname: s.nickname ?? null,
+              country: s.country ?? null,
+            },
+            is_pod_leader_this_week: s.is_pod_leader_this_week ?? false,
+            hasSubmitted: (s.deliverables_submitted ?? 0) >= currentWeek,
+            hoursInactive: s.hours_since_activity ?? 0,
+            isOnline: (s.hours_since_activity ?? 999) < 0.25,
+          })
+        }
+        setPods([...podMap.values()])
       })
       .catch(console.error)
       .finally(() => setLoading(false))
