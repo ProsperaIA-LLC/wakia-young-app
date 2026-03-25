@@ -117,9 +117,36 @@ function Skeleton() {
 
 export default function MentorDashboardPage() {
   const router = useRouter()
-  const [data, setData]       = useState<Payload | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter]   = useState<'all' | 'yellow' | 'red'>('all')
+  const [data, setData]             = useState<Payload | null>(null)
+  const [loading, setLoading]       = useState(true)
+  const [filter, setFilter]         = useState<'all' | 'yellow' | 'red'>('all')
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set())
+  const [resolvingAll, setResolvingAll] = useState(false)
+
+  async function resolveAlert(alertId: string) {
+    setResolvedIds(prev => new Set([...prev, alertId]))
+    await fetch('/api/mentor/alerts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alertId }),
+    })
+  }
+
+  async function resolveAllAlerts(cohortId: string) {
+    if (!data) return
+    setResolvingAll(true)
+    const allIds = [
+      ...data.redAlerts.map(a => a.alert.id),
+      ...data.yellowAlerts.map(a => a.alert.id),
+    ]
+    setResolvedIds(new Set(allIds))
+    await fetch('/api/mentor/alerts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resolveAll: true, cohortId }),
+    })
+    setResolvingAll(false)
+  }
 
   useEffect(() => {
     fetch('/api/mentor/dashboard')
@@ -166,13 +193,13 @@ export default function MentorDashboardPage() {
     ? Math.round(submittedCount / students.length * 100)
     : 0
 
-  // Alert students list for banner
+  // Alert students list for banner — filter out locally resolved ones
   const alertStudents = [
     ...redAlerts.map(a => ({ ...a, sev: 'red' as const })),
     ...yellowAlerts.map(a => ({ ...a, sev: 'yellow' as const })),
-  ].slice(0, 4)
+  ].filter(a => !resolvedIds.has(a.alert.id))
 
-  const totalAlerts = redAlerts.length + yellowAlerts.length
+  const totalAlerts = alertStudents.length
 
   // Filtered students list
   const filtered = students.filter(s => {
@@ -261,38 +288,80 @@ export default function MentorDashboardPage() {
           <div style={{
             background: 'var(--coral-l)', border: '1px solid rgba(255,92,53,0.2)',
             borderRadius: 14, padding: '14px 18px', marginBottom: 16,
-            display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
           }}>
-            <div style={{
-              width: 36, height: 36, background: 'var(--coral)', borderRadius: 9,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 17, flexShrink: 0,
-            }}>
-              🚨
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>
-                {totalAlerts} estudiante{totalAlerts !== 1 ? 's' : ''} necesita{totalAlerts === 1 ? '' : 'n'} atención hoy
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+              <div style={{
+                width: 36, height: 36, background: 'var(--coral)', borderRadius: 9,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 17, flexShrink: 0,
+              }}>
+                🚨
               </div>
-              <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
-                Sin actividad por más de 48 horas — el buddy ya fue notificado automáticamente
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>
+                  {totalAlerts} estudiante{totalAlerts !== 1 ? 's' : ''} necesita{totalAlerts === 1 ? '' : 'n'} atención hoy
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
+                  Sin actividad por más de 48 horas
+                </div>
               </div>
+              <button
+                onClick={() => resolveAllAlerts(cohort.id)}
+                disabled={resolvingAll}
+                style={{
+                  background: 'var(--white)', border: '1.5px solid var(--coral)',
+                  borderRadius: 8, padding: '6px 14px',
+                  fontSize: 11, fontWeight: 700, color: 'var(--coral)',
+                  cursor: resolvingAll ? 'not-allowed' : 'pointer',
+                  opacity: resolvingAll ? 0.6 : 1, flexShrink: 0,
+                }}
+              >
+                {resolvingAll ? 'Resolviendo...' : 'Resolver todas ✓'}
+              </button>
             </div>
-            <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', flexWrap: 'wrap' }}>
+            {/* Per-student rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {alertStudents.map(a => (
-                <button
-                  key={a.alert.id}
-                  onClick={() => router.push(`/mentor/students/${a.alert.student_id}`)}
-                  style={{
-                    background: 'var(--white)', border: '1.5px solid var(--coral)',
-                    borderRadius: 20, padding: '4px 12px',
-                    fontSize: 12, fontWeight: 700, color: 'var(--coral)',
-                    cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}
-                >
-                  {a.student.nickname || a.student.full_name.split(' ')[0]}
-                  {a.student.country ? ` · ${a.student.country}` : ''}
-                </button>
+                <div key={a.alert.id} style={{
+                  background: 'var(--white)', borderRadius: 10,
+                  padding: '8px 12px',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: a.sev === 'red' ? 'var(--coral)' : 'var(--gold)',
+                  }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', flex: 1 }}>
+                    {a.student.full_name}
+                    {a.student.country ? <span style={{ fontWeight: 400, color: 'var(--ink3)', marginLeft: 6 }}>· {a.student.country}</span> : null}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--ink3)' }}>
+                    {a.sev === 'red' ? '+48h sin actividad' : '+24h sin actividad'}
+                  </span>
+                  <button
+                    onClick={() => router.push(`/mentor/students/${a.alert.student_id}`)}
+                    style={{
+                      background: 'var(--coral-l)', border: '1px solid rgba(255,92,53,0.3)',
+                      borderRadius: 7, padding: '4px 10px',
+                      fontSize: 11, fontWeight: 700, color: 'var(--coral)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Ver
+                  </button>
+                  <button
+                    onClick={() => resolveAlert(a.alert.id)}
+                    style={{
+                      background: 'var(--green-l)', border: '1px solid rgba(0,200,150,0.3)',
+                      borderRadius: 7, padding: '4px 10px',
+                      fontSize: 11, fontWeight: 700, color: 'var(--green-d)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Resolver ✓
+                  </button>
+                </div>
               ))}
             </div>
           </div>
