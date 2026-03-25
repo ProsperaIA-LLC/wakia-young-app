@@ -27,7 +27,7 @@ const INCLUDED = [
   '6 semanas de proyecto real con IA',
   'Mentoría personalizada semanal',
   'Pod de 4–5 estudiantes de toda LATAM',
-  'Acceso a Próspero — tu tutor de IA',
+  'Acceso a Luna — tu tutora de IA',
   'Certificación internacional (FGU)',
   'Comunidad vitalicia de builders',
 ]

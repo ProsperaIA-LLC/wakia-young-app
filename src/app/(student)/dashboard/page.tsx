@@ -66,7 +66,7 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
   const [loading, setLoading] = useState(false)
   const [msgs, setMsgs] = useState<Array<{ role: 'assistant' | 'user'; content: string }>>([{
     role: 'assistant',
-    content: `¡Hola ${user?.nickname || 'estudiante'}! Soy Próspero, tu tutor IA. Estoy acá para ayudarte con lo que necesités esta semana. ¿Por dónde empezamos? 🚀`,
+    content: `¡Hola ${user?.nickname || 'estudiante'}! Soy Luna, tu tutora IA. Estoy acá para ayudarte con lo que necesités esta semana. ¿Por dónde empezamos? 🚀`,
   }])
   const msgsEndRef = useRef<HTMLDivElement>(null)
 
@@ -106,7 +106,7 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
       {/* FAB */}
       <button
         onClick={() => setOpen(o => !o)}
-        aria-label={open ? 'Cerrar Próspero' : 'Abrir Próspero'}
+        aria-label={open ? 'Cerrar Luna' : 'Abrir Luna'}
         style={{
           position: 'fixed', bottom: '28px', right: '28px', zIndex: 200,
           width: '60px', height: '60px', borderRadius: '50%',
@@ -148,7 +148,7 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
             <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: '11px', height: '11px', borderRadius: '50%', background: 'var(--green)', border: '2.5px solid var(--navy)' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff' }}>Próspero · Tutor IA</div>
+            <div style={{ fontWeight: 800, fontSize: '15px', color: '#fff' }}>Luna · Tutora IA</div>
             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', marginTop: '1px' }}>
               Disponible ahora · Semana {week?.week_number ?? '?'}
             </div>
@@ -198,7 +198,7 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-            placeholder="Preguntale algo a Próspero..."
+            placeholder="Preguntale algo a Luna..."
             rows={1}
             style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: '12px', padding: '9px 13px', fontSize: '13px', color: 'var(--ink)', fontFamily: 'inherit', resize: 'none', outline: 'none', background: 'var(--bg)', maxHeight: '90px', lineHeight: 1.5, transition: 'border-color .15s' }}
             onFocus={e => { e.target.style.borderColor = 'var(--magenta)'; e.target.style.background = '#fff' }}

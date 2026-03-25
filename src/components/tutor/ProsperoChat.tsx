@@ -160,7 +160,7 @@ export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoCha
       {/* FAB */}
       <button
         onClick={() => setOpen(v => !v)}
-        aria-label="Abrir tutor Próspero"
+        aria-label="Abrir tutor Luna"
         className="tp-fab"
         style={{
           borderRadius: '50%',
@@ -258,7 +258,7 @@ export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoCha
             {/* Name + status */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>
-                Próspero
+                Luna
               </div>
               <div style={{ color: '#4caf50', fontSize: 11, marginTop: 2 }}>
                 ● En línea · IA Tutor
@@ -364,7 +364,7 @@ export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoCha
                       maxWidth: 280,
                     }}
                   >
-                    ¡Hola{userName ? `, ${userName}` : ''}! Soy Próspero, tu tutor de IA. ¿En qué te puedo ayudar hoy?
+                    ¡Hola{userName ? `, ${userName}` : ''}! Soy Luna, tu tutora de IA. ¿En qué te puedo ayudar hoy?
                   </div>
                   <div style={{ color: '#555', fontSize: 10, marginTop: 4, marginLeft: 4 }}>
                     {formatTime(new Date())}

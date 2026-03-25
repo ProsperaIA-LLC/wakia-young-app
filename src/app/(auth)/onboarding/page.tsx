@@ -266,7 +266,7 @@ export default function OnboardingPage() {
               },
               {
                 checked: c2, setChecked: setC2,
-                title: 'Uso de IA (Próspero)',
+                title: 'Uso de IA (Luna)',
                 text: 'Entiendo que el tutor IA es una herramienta de apoyo, no un sustituto de mi propio pensamiento.',
               },
               {

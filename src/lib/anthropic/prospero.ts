@@ -85,7 +85,7 @@ export interface ChatResult {
 // The static base is here — context is injected via buildSystemPrompt().
 
 export const PROSPERO_SYSTEM_PROMPT_BASE = `
-Sos Próspero, el tutor IA del programa Prospera Young AI.
+Sos Luna, la tutora IA del programa Prospera Young AI.
 
 QUIÉN SOS:
 Acompañás a estudiantes latinoamericanos de 14 a 18 años — tanto en Latinoamérica como hijos de latinos en Estados Unidos — durante un programa intensivo de 6 semanas donde construyen productos reales con inteligencia artificial.
@@ -286,7 +286,7 @@ export async function chat(
 
   if (limitCheck.limitReached) {
     return {
-      reply: `Ya llegaste al límite de mensajes por hoy (${MAX_DAILY_MESSAGES}) 😄 Próspero necesita descansar también. Volvé mañana con energía renovada — mientras tanto, ¿qué podés avanzar sola/solo en tu entregable?`,
+      reply: `Ya llegaste al límite de mensajes por hoy (${MAX_DAILY_MESSAGES}) 😄 Luna necesita descansar también. Volvé mañana con energía renovada — mientras tanto, ¿qué podés avanzar sola/solo en tu entregable?`,
       dailyCount: limitCheck.count,
       limitReached: true,
       tokensUsed: 0,
@@ -484,6 +484,6 @@ export async function createEscalationAlert(
       cohort_id: cohortId,
       alert_type: 'inactive_48h', // closest type — mentor will see the message
       severity: 'red',
-      message: `Próspero detectó una posible situación que necesita atención. Último mensaje del estudiante: "${message.substring(0, 200)}"`,
+      message: `Luna detectó una posible situación que necesita atención. Último mensaje del estudiante: "${message.substring(0, 200)}"`,
     })
 }

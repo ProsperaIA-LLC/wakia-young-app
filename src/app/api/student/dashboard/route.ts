@@ -210,7 +210,7 @@ export async function GET() {
       const ACTION_LABELS: Record<string, string> = {
         login:                  'entró a la plataforma',
         deliverable_submitted:  'subió su entregable',
-        chat_message:           'habló con Próspero',
+        chat_message:           'habló con Luna',
         reflection_submitted:   'completó su reflexión',
         pod_checkin:            'hizo check-in en el pod',
         video_viewed:           'vio el video de la semana',
