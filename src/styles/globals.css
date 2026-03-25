@@ -37,4 +37,6 @@
   --radius-card:   16px;
   --radius-btn:    10px;
   --radius-badge:  20px;
+  --radius:        10px;   /* alias used in student/mentor pages */
+  --radius-lg:     16px;   /* alias used in student/mentor pages */
 }
