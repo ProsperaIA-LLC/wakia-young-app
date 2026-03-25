@@ -503,7 +503,7 @@ export default function DeliverablesPage() {
         color: 'white',
         borderRadius: 'var(--radius-lg)',
         padding: '24px',
-        marginBottom: '32px',
+        marginBottom: '20px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>
           Fenómeno de apertura
@@ -512,6 +512,64 @@ export default function DeliverablesPage() {
           "{currentWeek.opening_question}"
         </p>
       </div>
+
+      {/* Resources row — video + notion guide + tools */}
+      {(currentWeek.mentor_video_url || currentWeek.notion_guide_url || (currentWeek.tools && currentWeek.tools.length > 0)) && (
+        <div style={{
+          display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '28px',
+        }}>
+          {currentWeek.mentor_video_url && (
+            <a
+              href={currentWeek.mentor_video_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                background: 'var(--navy)', color: '#fff',
+                padding: '10px 16px', borderRadius: 'var(--radius)',
+                fontSize: '13px', fontWeight: 700, textDecoration: 'none',
+                transition: 'opacity .15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.85' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
+            >
+              ▶ Video del mentor
+            </a>
+          )}
+          {currentWeek.notion_guide_url && (
+            <a
+              href={currentWeek.notion_guide_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                background: 'var(--teal-l)', color: 'var(--teal)',
+                border: '1px solid rgba(0,140,165,0.25)',
+                padding: '10px 16px', borderRadius: 'var(--radius)',
+                fontSize: '13px', fontWeight: 700, textDecoration: 'none',
+                transition: 'opacity .15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '0.85' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.opacity = '1' }}
+            >
+              📋 Guía Notion
+            </a>
+          )}
+          {currentWeek.tools && currentWeek.tools.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              {currentWeek.tools.map((tool: string) => (
+                <span key={tool} style={{
+                  background: 'var(--bg2)', color: 'var(--ink2)',
+                  fontSize: '12px', fontWeight: 600,
+                  padding: '6px 12px', borderRadius: 'var(--radius)',
+                }}>
+                  {tool}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Deliverable */}
       <section style={{ marginBottom: '40px' }}>

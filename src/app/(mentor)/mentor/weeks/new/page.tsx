@@ -36,6 +36,8 @@ export default function NewWeekPage() {
   const [toolInput, setToolInput]                     = useState('')
   const [unlockDate, setUnlockDate]                   = useState('')
   const [dueDate, setDueDate]                         = useState('')
+  const [mentorVideoUrl, setMentorVideoUrl]           = useState('')
+  const [notionGuideUrl, setNotionGuideUrl]           = useState('')
 
   useEffect(() => {
     fetch('/api/mentor/cohort')
@@ -92,6 +94,8 @@ export default function NewWeekPage() {
         tools,
         unlock_date: unlockDate,
         due_date: dueDate,
+        mentor_video_url: mentorVideoUrl || null,
+        notion_guide_url: notionGuideUrl || null,
       }),
     })
 
@@ -314,6 +318,30 @@ export default function NewWeekPage() {
                 {t}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Resources */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 18 }}>
+          <div>
+            <label style={labelStyle}>Video del mentor (URL, opcional)</label>
+            <input
+              type="url"
+              value={mentorVideoUrl}
+              onChange={e => setMentorVideoUrl(e.target.value)}
+              placeholder="https://youtube.com/..."
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Guía Notion (URL, opcional)</label>
+            <input
+              type="url"
+              value={notionGuideUrl}
+              onChange={e => setNotionGuideUrl(e.target.value)}
+              placeholder="https://notion.so/..."
+              style={inputStyle}
+            />
           </div>
         </div>
 
