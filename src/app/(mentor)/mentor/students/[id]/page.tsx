@@ -42,6 +42,54 @@ interface NoteRow {
   created_at: string
 }
 
+interface ScoreRow {
+  validation_score:    number
+  creation_score:      number
+  communication_score: number
+  growth_score:        number
+  attendance_percent:  number
+  presented_at_demo_day: boolean
+  notes: string | null
+  scored_at: string | null
+}
+
+const COMPETENCY_META = [
+  { key: 'validation_score',    label: 'Validación',    desc: 'Semanas 1–2', color: 'var(--teal)' },
+  { key: 'creation_score',      label: 'Creación',      desc: 'Semanas 3–5', color: 'var(--magenta)' },
+  { key: 'communication_score', label: 'Comunicación',  desc: 'Semana 6',    color: 'var(--green-d)' },
+  { key: 'growth_score',        label: 'Crecimiento',   desc: 'Todo el programa', color: 'var(--gold)' },
+] as const
+
+function ScoreSlider({
+  label, desc, color, value, onChange,
+}: {
+  label: string; desc: string; color: string; value: number; onChange: (v: number) => void
+}) {
+  const pct = (value / 4) * 100
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div>
+          <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{label}</span>
+          <span style={{ fontSize: 11, color: 'var(--ink3)', marginLeft: 6 }}>{desc}</span>
+        </div>
+        <span style={{ fontWeight: 800, fontSize: 18, color, minWidth: 30, textAlign: 'right' }}>
+          {value.toFixed(1)}
+        </span>
+      </div>
+      <input
+        type="range" min={0} max={4} step={0.5}
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        style={{ width: '100%', accentColor: color, height: 4, cursor: 'pointer' }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--ink4)', marginTop: 2 }}>
+        <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+      </div>
+    </div>
+  )
+}
+
 export default function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
@@ -57,6 +105,14 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   const [feedbackId, setFeedbackId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
   const [savingFeedback, setSavingFeedback] = useState(false)
+
+  // Competency scores
+  const [scores, setScores] = useState<ScoreRow>({
+    validation_score: 0, creation_score: 0, communication_score: 0, growth_score: 0,
+    attendance_percent: 0, presented_at_demo_day: false, notes: null, scored_at: null,
+  })
+  const [savingScores, setSavingScores] = useState(false)
+  const [scoresSaved, setScoresSaved] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -103,6 +159,15 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
         .order('created_at', { ascending: false })
       if (notesData) setNotes(notesData.map((n: any) => ({ ...n, content: n.note })))
 
+      // Competency scores (via API to use service role)
+      if (enrollment?.cohort_id) {
+        const scoresRes = await fetch(`/api/mentor/scores?student_id=${id}&cohort_id=${enrollment.cohort_id}`)
+        if (scoresRes.ok) {
+          const scoresJson = await scoresRes.json()
+          if (scoresJson.scores) setScores(scoresJson.scores)
+        }
+      }
+
       setLoading(false)
     }
     load()
@@ -136,6 +201,24 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     setFeedbackId(null)
     setFeedback('')
     setSavingFeedback(false)
+  }
+
+  async function saveScores() {
+    if (!cohortId) return
+    setSavingScores(true)
+    setScoresSaved(false)
+    const res = await fetch('/api/mentor/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: id, cohort_id: cohortId, ...scores }),
+    })
+    if (res.ok) {
+      const json = await res.json()
+      setScores(json.scores)
+      setScoresSaved(true)
+      setTimeout(() => setScoresSaved(false), 3000)
+    }
+    setSavingScores(false)
   }
 
   if (loading) {
@@ -377,6 +460,147 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               </p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Competency Scoring ── */}
+      <section style={{ marginTop: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <h2 style={{ fontWeight: 700, fontSize: '16px', margin: 0 }}>Evaluación de competencias</h2>
+          {scores.scored_at && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+              background: 'var(--green-l)', color: 'var(--green-d)',
+              textTransform: 'uppercase', letterSpacing: '0.04em',
+            }}>
+              Evaluado ✓
+            </span>
+          )}
+        </div>
+
+        <div style={{
+          background: 'white', border: '1.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)', padding: '24px',
+        }}>
+          {/* Average badge */}
+          {scores.scored_at && (() => {
+            const avg = (scores.validation_score + scores.creation_score + scores.communication_score + scores.growth_score) / 4
+            const eligible = avg >= 3.0 && scores.attendance_percent >= 100 && scores.presented_at_demo_day
+            return (
+              <div style={{
+                background: eligible ? 'var(--green-l)' : 'var(--gold-l)',
+                border: `1px solid ${eligible ? 'var(--green)' : 'var(--gold)'}`,
+                borderRadius: 12, padding: '12px 16px', marginBottom: 20,
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <span style={{ fontSize: 22 }}>{eligible ? '🏆' : '📋'}</span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)' }}>
+                    {eligible ? 'Cumple todos los requisitos para el certificado' : 'Aún no cumple todos los requisitos'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 2 }}>
+                    Promedio: {avg.toFixed(2)} / 4.0
+                    {scores.attendance_percent < 100 && ' · Asistencia incompleta'}
+                    {!scores.presented_at_demo_day && ' · No presentó en Demo Day'}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* 4 competency sliders */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 24 }}>
+            {COMPETENCY_META.map(({ key, label, desc, color }) => (
+              <ScoreSlider
+                key={key}
+                label={label}
+                desc={desc}
+                color={color}
+                value={scores[key as keyof ScoreRow] as number}
+                onChange={v => setScores(prev => ({ ...prev, [key]: v }))}
+              />
+            ))}
+          </div>
+
+          {/* Attendance % */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: 'var(--ink2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Asistencia a sesiones en vivo (%)
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <input
+                type="range" min={0} max={100} step={10}
+                value={scores.attendance_percent}
+                onChange={e => setScores(prev => ({ ...prev, attendance_percent: Number(e.target.value) }))}
+                style={{ flex: 1, accentColor: 'var(--teal)', height: 4, cursor: 'pointer' }}
+              />
+              <span style={{ fontWeight: 800, fontSize: 16, color: scores.attendance_percent === 100 ? 'var(--green-d)' : 'var(--coral)', minWidth: 44 }}>
+                {scores.attendance_percent}%
+              </span>
+            </div>
+          </div>
+
+          {/* Demo Day toggle */}
+          <div style={{ marginBottom: 22 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <div
+                onClick={() => setScores(prev => ({ ...prev, presented_at_demo_day: !prev.presented_at_demo_day }))}
+                style={{
+                  width: 40, height: 22, borderRadius: 11,
+                  background: scores.presented_at_demo_day ? 'var(--green)' : 'var(--ink4)',
+                  position: 'relative', cursor: 'pointer', transition: 'background .2s', flexShrink: 0,
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: 3, left: scores.presented_at_demo_day ? 21 : 3,
+                  width: 16, height: 16, borderRadius: '50%', background: 'white',
+                  transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                }} />
+              </div>
+              <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>
+                Presentó en Demo Day
+              </span>
+            </label>
+          </div>
+
+          {/* Notes */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontWeight: 700, fontSize: 12, color: 'var(--ink2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Notas de evaluación (opcional)
+            </label>
+            <textarea
+              value={scores.notes ?? ''}
+              onChange={e => setScores(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Observaciones sobre el desempeño del estudiante..."
+              style={{
+                width: '100%', minHeight: 70, padding: '10px 12px',
+                border: '1px solid var(--border)', borderRadius: 10,
+                fontFamily: 'inherit', fontSize: 13, resize: 'vertical',
+                boxSizing: 'border-box', color: 'var(--ink)',
+              }}
+            />
+          </div>
+
+          {/* Save */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={saveScores}
+              disabled={savingScores || !cohortId}
+              style={{
+                background: savingScores ? 'var(--ink4)' : 'var(--magenta)',
+                color: '#fff', border: 'none', borderRadius: 10,
+                padding: '11px 24px', fontWeight: 800, fontSize: 14,
+                cursor: savingScores ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {savingScores ? 'Guardando...' : 'Guardar evaluación'}
+            </button>
+            {scoresSaved && (
+              <span style={{ fontSize: 13, color: 'var(--green-d)', fontWeight: 600 }}>
+                ✓ Guardado
+              </span>
+            )}
+          </div>
         </div>
       </section>
 
