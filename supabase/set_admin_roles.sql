@@ -1,5 +1,5 @@
 -- ============================================================
--- SET ADMIN ROLE — Jessica + Heiddy
+-- SET ADMIN ROLE — Jessica + Heiddy + María
 -- Permite ver ambas vistas: /mentor/* y /dashboard (estudiante)
 --
 -- Correr en: Supabase Dashboard → SQL Editor
@@ -9,6 +9,7 @@ DO $$
 DECLARE
   v_jessica_id  uuid;
   v_heiddy_id   uuid;
+  v_maria_id    uuid;
   v_cohort_id   uuid;
   v_pod_id      uuid;
 BEGIN
@@ -16,6 +17,7 @@ BEGIN
   -- IDs de las usuarias
   SELECT id INTO v_jessica_id FROM auth.users WHERE email = 'jessicajanecolmenarespaz@gmail.com' LIMIT 1;
   SELECT id INTO v_heiddy_id  FROM auth.users WHERE email = 'soyheiddy@gmail.com'               LIMIT 1;
+  SELECT id INTO v_maria_id   FROM auth.users WHERE email = 'maria.almeida@oksbdc.org'           LIMIT 1;
 
   -- Cohorte activa
   SELECT id INTO v_cohort_id FROM public.cohorts WHERE status = 'active' ORDER BY start_date DESC LIMIT 1;
@@ -52,7 +54,23 @@ BEGIN
     END IF;
   END IF;
 
-  -- ── Pod para ambas (si no tienen) ─────────────────────────────────────────
+  -- ── MARÍA ──────────────────────────────────────────────────────────────────
+
+  IF v_maria_id IS NULL THEN
+    RAISE NOTICE '⚠ María no encontrada en auth.users. Debe hacer login primero.';
+  ELSE
+    UPDATE public.users SET role = 'admin', updated_at = now() WHERE id = v_maria_id;
+    RAISE NOTICE '✅ María → admin';
+
+    -- Enrollment como estudiante si no tiene
+    IF v_cohort_id IS NOT NULL THEN
+      INSERT INTO public.enrollments (user_id, cohort_id, market, price_paid_usd, is_scholarship, status, enrolled_at)
+      VALUES (v_maria_id, v_cohort_id, 'USA', 0, true, 'active', now())
+      ON CONFLICT (user_id, cohort_id) DO UPDATE SET status = 'active';
+    END IF;
+  END IF;
+
+  -- ── Pod para todas (si no tienen) ──────────────────────────────────────────
 
   IF v_cohort_id IS NOT NULL THEN
     -- Buscar pod existente o crear uno
@@ -77,11 +95,17 @@ BEGIN
       VALUES (v_pod_id, v_heiddy_id, v_cohort_id, true)
       ON CONFLICT (pod_id, user_id) DO NOTHING;
     END IF;
+
+    IF v_maria_id IS NOT NULL THEN
+      INSERT INTO public.pod_members (pod_id, user_id, cohort_id, is_pod_leader_this_week)
+      VALUES (v_pod_id, v_maria_id, v_cohort_id, false)
+      ON CONFLICT (pod_id, user_id) DO NOTHING;
+    END IF;
   END IF;
 
   RAISE NOTICE '';
   RAISE NOTICE '── Resultado ──────────────────────────────────';
-  RAISE NOTICE 'Ambas tienen role=admin y pueden acceder a:';
+  RAISE NOTICE 'Las tres tienen role=admin y pueden acceder a:';
   RAISE NOTICE '  → /mentor/dashboard  (vista mentor)';
   RAISE NOTICE '  → /dashboard         (vista estudiante)';
   RAISE NOTICE '  → /deliverables, /pod, /diary, /project';
