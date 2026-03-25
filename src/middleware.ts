@@ -45,8 +45,8 @@ export async function middleware(request: NextRequest) {
         return redirect(request, '/onboarding')
       }
 
-      // 3. Mentor routes require role === 'mentor'
-      if (isMentorRoute && profile?.role !== 'mentor') {
+      // 3. Mentor routes require role === 'mentor' or 'admin'
+      if (isMentorRoute && !['mentor', 'admin'].includes(profile?.role)) {
         return redirect(request, '/dashboard')
       }
     }
