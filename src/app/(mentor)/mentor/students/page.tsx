@@ -35,7 +35,33 @@ export default function StudentsPage() {
   useEffect(() => {
     fetch('/api/mentor/dashboard')
       .then(r => r.json())
-      .then(d => { setStudents(d.students || []); setLoading(false) })
+      .then(d => {
+        const currentWeek = d.cohort?.current_week ?? 1
+        const cohortName  = d.cohort?.name ?? ''
+        const mapped: MentorStudent[] = (d.students ?? []).map((s: any) => ({
+          enrollment: { id: s.user_id, cohort_id: s.cohort_id, user_id: s.user_id },
+          user: {
+            id: s.user_id,
+            full_name: s.full_name ?? 'Estudiante',
+            nickname: s.nickname ?? null,
+            avatar_url: null,
+            country: s.country ?? null,
+          },
+          cohortName,
+          lastActivityAt: null,
+          hoursInactive: s.hours_since_activity ?? 0,
+          deliverableStatus: s.deliverables_submitted >= currentWeek ? 'submitted' : 'pending',
+          hasSubmitted: s.deliverables_submitted >= currentWeek,
+          alertLevel: (s.hours_since_activity ?? 0) >= 48
+            ? 'red'
+            : (s.hours_since_activity ?? 0) >= 24
+            ? 'yellow'
+            : 'none',
+          currentWeekNumber: currentWeek,
+        }))
+        setStudents(mapped)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [])
 
