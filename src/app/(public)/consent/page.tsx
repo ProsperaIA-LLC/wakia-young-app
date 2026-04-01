@@ -6,22 +6,23 @@ import { useSearchParams } from 'next/navigation'
 // ── Inner component (needs useSearchParams) ────────────────────────────────────
 
 function ConsentForm() {
-  const searchParams  = useSearchParams()
-  const parentEmail   = searchParams.get('email')   ?? ''
-  const studentName   = searchParams.get('student') ?? ''
+  const searchParams = useSearchParams()
+  const token        = searchParams.get('token') ?? ''
+  const displayName  = searchParams.get('name')  ?? ''   // display-only, not used for auth
 
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
+  const [status, setStatus]         = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [errorMsg, setErrorMsg]     = useState('')
+  const [confirmedName, setConfirmedName] = useState('')  // name returned by API on success
 
   async function handleConsent() {
-    if (!studentName) return
+    if (!token) return
     setStatus('loading')
     setErrorMsg('')
     try {
       const res = await fetch('/api/consent', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentName, parentEmail }),
+        body:    JSON.stringify({ token }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -29,6 +30,7 @@ function ConsentForm() {
         setStatus('error')
         return
       }
+      setConfirmedName(data.studentName ?? displayName)
       setStatus('success')
     } catch {
       setErrorMsg('No se pudo conectar. Verificá tu conexión e intentá de nuevo.')
@@ -50,7 +52,7 @@ function ConsentForm() {
           ¡Autorización confirmada!
         </h2>
         <p style={{ color: 'var(--ink2)', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-          Gracias por autorizar la participación de <strong>{studentName}</strong> en
+          Gracias por autorizar la participación de <strong>{confirmedName}</strong> en
           Prospera Young AI. Tu hij@ ya puede acceder a todos los contenidos del programa.
         </p>
         <p style={{ color: 'var(--ink3)', fontSize: 13, marginTop: 16 }}>
@@ -61,7 +63,7 @@ function ConsentForm() {
   }
 
   // ── Invalid link state ─────────────────────────────────────────────────────
-  if (!studentName) {
+  if (!token) {
     return (
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
@@ -108,12 +110,9 @@ function ConsentForm() {
         <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>
           Estudiante
         </div>
-        <div style={{ fontSize: 20, fontWeight: 800 }}>{studentName}</div>
-        {parentEmail && (
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
-            Consentimiento solicitado a: {parentEmail}
-          </div>
-        )}
+        <div style={{ fontSize: 20, fontWeight: 800 }}>
+          {displayName || 'Tu hij@'}
+        </div>
       </div>
 
       {/* Program info */}
@@ -169,7 +168,7 @@ function ConsentForm() {
       </button>
 
       <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink3)', marginTop: 14, marginBottom: 0 }}>
-        Al confirmar, declarás que sos padre, madre o tutor legal de {studentName} y
+        Al confirmar, declarás que sos padre, madre o tutor legal{displayName ? ` de ${displayName}` : ''} y
         autorizás su participación en el programa.
       </p>
     </>

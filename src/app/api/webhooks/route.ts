@@ -14,9 +14,18 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { createHmac } from 'crypto'
 import { getStripe } from '@/lib/stripe/checkout'
 import { createClient } from '@supabase/supabase-js'
 import type { Database, Market } from '@/types'
+
+/** Generate a signed token for parent consent. Token = `<userId>.<hmac>`. */
+function generateConsentToken(userId: string): string {
+  const secret = process.env.CONSENT_TOKEN_SECRET
+  if (!secret) throw new Error('CONSENT_TOKEN_SECRET is not set')
+  const sig = createHmac('sha256', secret).update(userId).digest('base64url')
+  return `${userId}.${sig}`
+}
 
 // Raw body is needed for Stripe signature verification.
 // Next.js App Router does not auto-parse the body, so req.text() works directly.
@@ -35,6 +44,7 @@ async function sendParentConsentEmail(opts: {
   parentName:   string
   parentEmail:  string
   studentName:  string
+  studentId:    string
   market:       Market
 }) {
   const apiKey = process.env.RESEND_API_KEY
@@ -46,6 +56,7 @@ async function sendParentConsentEmail(opts: {
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://prosperayoung.ai'
   const from    = process.env.RESEND_FROM_EMAIL   ?? 'noreply@prosperayoung.ai'
   const subject = `Autorización requerida: ${opts.studentName} se inscribió en Prospera Young AI`
+  const token   = generateConsentToken(opts.studentId)
 
   const html = `
 <!DOCTYPE html>
@@ -75,7 +86,7 @@ async function sendParentConsentEmail(opts: {
 
       <!-- CTA -->
       <div style="text-align:center;margin:28px 0;">
-        <a href="${appUrl}/consent?email=${encodeURIComponent(opts.parentEmail)}&student=${encodeURIComponent(opts.studentName)}"
+        <a href="${appUrl}/consent?token=${encodeURIComponent(token)}&name=${encodeURIComponent(opts.studentName)}"
            style="display:inline-block;background:#0E2A47;color:#ffffff;border-radius:10px;padding:14px 32px;font-weight:800;font-size:15px;text-decoration:none;">
           Autorizar participación →
         </a>
@@ -265,6 +276,7 @@ export async function POST(req: NextRequest) {
       parentName:  parentName || 'Padre/Tutor',
       parentEmail,
       studentName,
+      studentId:   userId,
       market,
     })
     console.log(`[webhook] Parent consent email sent to ${parentEmail} for ${studentName}`)

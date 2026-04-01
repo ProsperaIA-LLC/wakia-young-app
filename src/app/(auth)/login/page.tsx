@@ -30,6 +30,24 @@ function LoginPageInner() {
     if (!email) return
     setLoading(true)
     setError(null)
+
+    // Verificar que el email está registrado antes de enviar el OTP
+    try {
+      const check = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const { exists } = await check.json()
+      if (!exists) {
+        setError('No encontramos una cuenta con ese email. Para inscribirse, usá el botón "Registrarme".')
+        setLoading(false)
+        return
+      }
+    } catch {
+      // Si falla la verificación, dejamos pasar para no bloquear al usuario legítimo
+    }
+
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({ email })
     if (error) {
