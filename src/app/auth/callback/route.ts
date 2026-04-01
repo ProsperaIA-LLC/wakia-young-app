@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   const code       = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type       = searchParams.get('type') as EmailOtpType | null
-  const next       = searchParams.get('next') ?? '/dashboard'
+  const nextRaw    = searchParams.get('next') ?? '/dashboard'
+  // Prevent open redirect: only allow relative paths starting with /
+  const next       = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/dashboard'
 
   // Collect cookies written during the auth exchange so we can attach them
   // directly to the redirect response. Using next/headers + NextResponse.redirect

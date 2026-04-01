@@ -7,6 +7,9 @@ const STUDENT_ROUTES = ['/dashboard', '/deliverables', '/pod', '/diary', '/proje
 // Routes that require role === 'mentor'
 const MENTOR_ROUTES = ['/mentor']
 
+// Routes that require role === 'admin'
+const ADMIN_ROUTES = ['/admin']
+
 // Routes accessible only when NOT logged in
 const AUTH_ROUTES = ['/login', '/register']
 
@@ -24,17 +27,18 @@ export async function middleware(request: NextRequest) {
 
   const isStudentRoute = STUDENT_ROUTES.some(r => pathname.startsWith(r))
   const isMentorRoute  = MENTOR_ROUTES.some(r => pathname.startsWith(r))
+  const isAdminRoute   = ADMIN_ROUTES.some(r => pathname.startsWith(r))
   const isAuthRoute    = AUTH_ROUTES.some(r => pathname.startsWith(r))
   const isOnboarding   = pathname.startsWith('/onboarding')
 
   // 1. Unauthenticated → /login
-  if (!user && (isStudentRoute || isMentorRoute)) {
+  if (!user && (isStudentRoute || isMentorRoute || isAdminRoute)) {
     return redirect(request, '/login')
   }
 
   if (user) {
     // 2. Authenticated but no nickname → /onboarding (skip if already there)
-    if (!isOnboarding && (isStudentRoute || isMentorRoute)) {
+    if (!isOnboarding && (isStudentRoute || isMentorRoute || isAdminRoute)) {
       const { data: profile } = await supabase
         .from('users')
         .select('nickname, role')
@@ -49,9 +53,14 @@ export async function middleware(request: NextRequest) {
       if (isMentorRoute && !['mentor', 'admin'].includes(profile?.role)) {
         return redirect(request, '/dashboard')
       }
+
+      // 4. Admin routes require role === 'admin' only
+      if (isAdminRoute && profile?.role !== 'admin') {
+        return redirect(request, '/dashboard')
+      }
     }
 
-    // 4. Logged-in users visiting /login or /register → /dashboard
+    // 5. Logged-in users visiting /login or /register → /dashboard
     if (isAuthRoute) {
       return redirect(request, '/dashboard')
     }

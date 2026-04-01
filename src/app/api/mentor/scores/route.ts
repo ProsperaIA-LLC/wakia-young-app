@@ -41,6 +41,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'student_id y cohort_id son requeridos' }, { status: 400 })
   }
 
+  // Verify the student is actually enrolled in that cohort (prevents IDOR)
+  const service = getServiceClient()
+  const { data: enrollment } = await service
+    .from('enrollments')
+    .select('id')
+    .eq('user_id', student_id)
+    .eq('cohort_id', cohort_id)
+    .maybeSingle()
+
+  if (!enrollment) {
+    return NextResponse.json({ error: 'Estudiante no encontrado en esa cohorte' }, { status: 404 })
+  }
+
   // Validate score ranges 0–4
   const scoreFields = { validation_score, creation_score, communication_score, growth_score }
   for (const [field, val] of Object.entries(scoreFields)) {
@@ -52,8 +65,6 @@ export async function POST(req: NextRequest) {
   if (attendance_percent !== undefined && (attendance_percent < 0 || attendance_percent > 100)) {
     return NextResponse.json({ error: 'attendance_percent debe estar entre 0 y 100' }, { status: 400 })
   }
-
-  const service = getServiceClient()
 
   const { data, error } = await service
     .from('competency_scores')
@@ -94,6 +105,19 @@ export async function GET(req: NextRequest) {
   }
 
   const service = getServiceClient()
+
+  // Verify the student is actually enrolled in that cohort (prevents IDOR)
+  const { data: enrollment } = await service
+    .from('enrollments')
+    .select('id')
+    .eq('user_id', student_id)
+    .eq('cohort_id', cohort_id)
+    .maybeSingle()
+
+  if (!enrollment) {
+    return NextResponse.json({ error: 'Estudiante no encontrado en esa cohorte' }, { status: 404 })
+  }
+
   const { data, error } = await service
     .from('competency_scores')
     .select('*')

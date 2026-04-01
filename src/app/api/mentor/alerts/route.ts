@@ -37,6 +37,17 @@ export async function PATCH(req: NextRequest) {
 
   // Resolve all unresolved alerts for a cohort at once
   if (resolveAll && cohortId) {
+    // Verify the cohort exists (prevents resolving alerts in arbitrary cohorts)
+    const { data: cohort } = await service
+      .from('cohorts')
+      .select('id')
+      .eq('id', cohortId)
+      .maybeSingle()
+
+    if (!cohort) {
+      return NextResponse.json({ error: 'Cohorte no encontrada' }, { status: 404 })
+    }
+
     const { error } = await service
       .from('mentor_alerts')
       .update({ is_resolved: true, resolved_by: mentor.id, resolved_at: now })
