@@ -6,10 +6,10 @@
 
 ## 1. WHAT WE ARE BUILDING
 
-**Prospera Young AI** is an intensive 6-week virtual program for Latino students aged 14–18 (in LATAM and the US) where they build real AI-powered products from day one. The platform supports the full learning experience: weekly challenges, deliverables, peer accountability (pods), an AI tutor (Próspero), and mentor oversight.
+**Prospera Young AI** is an intensive 6-week virtual program for Latino students aged 14–18 (in LATAM and the US) where they build real AI-powered products from day one. The platform supports the full learning experience: weekly challenges, deliverables, peer accountability (pods), an AI tutor (Luna), and mentor oversight.
 
 **Two user types:**
-- **Students** — complete weekly challenges, submit deliverables, chat with Próspero, interact with their pod
+- **Students** — complete weekly challenges, submit deliverables, chat with Luna, interact with their pod
 - **Mentors** — monitor cohort progress, run weekly live sessions, flag at-risk students
 
 ---
@@ -45,7 +45,7 @@ Repo:          GitHub
 --gold-l:   #fef3d7   /* gold light background */
 --coral:    #ff5c35   /* urgency, deadlines, alerts, pending */
 --coral-l:  #ffede8   /* coral light background */
---magenta:  #a5086b   /* Próspero AI tutor, mentor identity */
+--magenta:  #a5086b   /* Luna AI tutor, mentor identity */
 --mag-l:    #fce8f4   /* magenta light background */
 --ink:      #111110   /* primary text */
 --ink2:     #3a3936   /* secondary text */
@@ -62,7 +62,7 @@ Repo:          GitHub
 - `--coral` → urgency, deadlines, missing activity
 - `--gold` → streak, achievements, Pod Leader status
 - `--teal` → information, navigation, links
-- `--magenta` → anything related to Próspero AI or mentors
+- `--magenta` → anything related to Luna AI or mentors
 - `--navy` → structural backgrounds (sidebar, banners)
 
 ### Typography
@@ -190,7 +190,7 @@ reflections (
   UNIQUE(user_id, week_id)
 )
 
--- Chat messages (Próspero AI tutor history)
+-- Chat messages (Luna AI tutor history)
 chat_messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES users(id) ON DELETE CASCADE,
@@ -336,7 +336,7 @@ Dropout prevention triggers (app alerts mentor automatically):
 
 ---
 
-## 8. PRÓSPERO AI TUTOR
+## 8. LUNA AI TUTOR
 
 ```
 Model:          claude-sonnet-4-20250514
@@ -344,7 +344,7 @@ API route:      /api/chat (POST)
 Auth:           Supabase session (never expose API key to client)
 
 System prompt core identity:
-  - Name: Próspero
+  - Name: Luna
   - Role: AI tutor for Prospera Young AI program
   - Language: Spanish, voseo latinoamericano (vos, tenés, podés)
   - Tone: warm, direct, Gen Z friendly — NOT corporate
@@ -406,7 +406,7 @@ Certificate awarded when:
 ```
 /app
   /api
-    /chat          → Próspero AI tutor endpoint
+    /chat          → Luna AI tutor endpoint
     /webhooks      → Stripe webhooks
   /(auth)
     /login         → Magic link login
@@ -431,7 +431,7 @@ Certificate awarded when:
   /ui             → Reusable UI (Button, Card, Badge, Avatar)
   /student        → Student-specific components
   /mentor         → Mentor-specific components
-  /tutor          → Próspero chat component
+  /tutor          → Luna chat component
   /pod            → Pod and buddy components
 
 /lib
@@ -463,7 +463,7 @@ Certificate awarded when:
    → Block access to program content until parent_consent === true
    → Show pending consent screen
 
-4. Próspero daily query limit
+4. Luna daily query limit
    → Count chat_messages WHERE user_id = X AND DATE(created_at) = today
    → If count >= 15 total messages today: show "Volvé mañana" message
    → Guardrail is server-side in /api/chat, never client-only
