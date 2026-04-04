@@ -76,7 +76,7 @@ export async function GET() {
         cohort_id,
         buddy_id,
         is_pod_leader_this_week,
-        users (
+        users!user_id (
           id,
           full_name,
           nickname,
