@@ -7,6 +7,16 @@
 // ── ENUMS ────────────────────────────────────────────────────
 
 export type UserRole = 'student' | 'mentor' | 'admin'
+
+export interface BuddyMessage {
+  id: string
+  sender_id: string
+  receiver_id: string
+  cohort_id: string | null
+  content: string
+  is_read: boolean
+  created_at: string
+}
 export type Market = 'LATAM' | 'USA'
 export type CohortStatus = 'upcoming' | 'active' | 'completed'
 export type EnrollmentStatus = 'active' | 'completed' | 'dropped'
@@ -513,6 +523,12 @@ export type Database = {
         Row: { id: string; student_id: string; cohort_id: string; validation_score: number; creation_score: number; communication_score: number; growth_score: number; attendance_percent: number; presented_at_demo_day: boolean; scored_by: string | null; scored_at: string | null; notes: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; student_id: string; cohort_id: string; validation_score?: number; creation_score?: number; communication_score?: number; growth_score?: number; attendance_percent?: number; presented_at_demo_day?: boolean; scored_by?: string | null; scored_at?: string | null; notes?: string | null; created_at?: string; updated_at?: string }
         Update: { id?: string; student_id?: string; cohort_id?: string; validation_score?: number; creation_score?: number; communication_score?: number; growth_score?: number; attendance_percent?: number; presented_at_demo_day?: boolean; scored_by?: string | null; scored_at?: string | null; notes?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      buddy_messages: {
+        Row: { id: string; sender_id: string; receiver_id: string; cohort_id: string | null; content: string; is_read: boolean; created_at: string }
+        Insert: { id?: string; sender_id: string; receiver_id: string; cohort_id?: string | null; content: string; is_read?: boolean; created_at?: string }
+        Update: { id?: string; sender_id?: string; receiver_id?: string; cohort_id?: string | null; content?: string; is_read?: boolean; created_at?: string }
         Relationships: []
       }
     }

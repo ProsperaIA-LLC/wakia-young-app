@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { PodMemberData, PodResponse } from '@/app/api/pod/route'
+import type { BuddyMessageItem, BuddyMessagesResponse } from '@/app/api/buddy/messages/route'
 
 // ── Avatar helpers ────────────────────────────────────────────────────────────
 
@@ -358,6 +359,248 @@ function LoadingSkeleton() {
   )
 }
 
+// ── Buddy chat ───────────────────────────────────────────────────────────────
+
+const DAY_PROMPTS: Record<number, string> = {
+  1: 'Mi plan esta semana es…',
+  3: '¿Cómo vas? ¿Necesitás algo?',
+  5: '¿Qué vas a mostrar mañana en el check-in?',
+  0: 'Vi tu entregable. Lo que más me gustó fue…',
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso)
+  const now = new Date()
+  const diffH = (now.getTime() - d.getTime()) / 36e5
+  if (diffH < 24) return d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+  if (diffH < 48) return 'Ayer'
+  return d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+}
+
+function BuddyChat({ buddy }: { buddy: PodMemberData }) {
+  const [data, setData]       = useState<BuddyMessagesResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [text, setText]       = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError]     = useState('')
+  const bottomRef             = useRef<HTMLDivElement>(null)
+  const todayPrompt           = DAY_PROMPTS[new Date().getDay()] ?? null
+
+  const buddyName = buddy.nickname || buddy.fullName.split(' ')[0]
+
+  useEffect(() => {
+    fetch('/api/buddy/messages')
+      .then(r => r.json())
+      .then(d => setData(d))
+      .catch(() => setError('No se pudo cargar la conversación'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [data?.messages])
+
+  async function send(content: string) {
+    if (!content.trim() || sending) return
+    setSending(true)
+    setError('')
+    try {
+      const res = await fetch('/api/buddy/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Error')
+      setData(prev => prev
+        ? { ...prev, messages: [...prev.messages, json.message as BuddyMessageItem] }
+        : prev
+      )
+      setText('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error enviando')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div style={{
+      background: 'var(--white)',
+      border: '1.5px solid var(--teal)',
+      borderRadius: 16,
+      overflow: 'hidden',
+      marginBottom: 24,
+    }}>
+      {/* Header */}
+      <div style={{
+        background: 'var(--teal-l)',
+        borderBottom: '1px solid rgba(0,140,165,0.15)',
+        padding: '12px 18px',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%',
+          background: buddy.isInactive ? 'var(--ink4)' : avatarColor(buddy.fullName),
+          color: '#fff', fontWeight: 800, fontSize: 12,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {initials(buddy.fullName, buddy.nickname)}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)' }}>
+            Mensajes con {buddyName}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--teal)' }}>Tu buddy</div>
+        </div>
+        {data && data.unreadCount > 0 && (
+          <div style={{
+            background: 'var(--coral)', color: '#fff',
+            fontSize: 11, fontWeight: 800,
+            padding: '2px 8px', borderRadius: 20,
+          }}>
+            {data.unreadCount} nuevo{data.unreadCount > 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+
+      {/* Messages */}
+      <div style={{
+        height: 280, overflowY: 'auto',
+        padding: '14px 16px',
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        {loading && (
+          <div style={{ textAlign: 'center', color: 'var(--ink4)', fontSize: 13, marginTop: 80 }}>
+            Cargando…
+          </div>
+        )}
+
+        {!loading && data?.messages.length === 0 && (
+          <div style={{ textAlign: 'center', marginTop: 60 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>👋</div>
+            <div style={{ fontSize: 13, color: 'var(--ink3)', fontWeight: 600 }}>
+              Todavía no hay mensajes con {buddyName}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink4)', marginTop: 4 }}>
+              Mandá el primer mensaje hoy
+            </div>
+          </div>
+        )}
+
+        {!loading && data?.messages.map(m => (
+          <div
+            key={m.id}
+            style={{
+              display: 'flex',
+              justifyContent: m.isMine ? 'flex-end' : 'flex-start',
+            }}
+          >
+            <div style={{
+              maxWidth: '75%',
+              background: m.isMine ? 'var(--teal)' : 'var(--bg2)',
+              color: m.isMine ? '#fff' : 'var(--ink)',
+              borderRadius: m.isMine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+              padding: '9px 13px',
+              fontSize: 13,
+              lineHeight: 1.55,
+            }}>
+              <div>{m.content}</div>
+              <div style={{
+                fontSize: 10,
+                color: m.isMine ? 'rgba(255,255,255,0.6)' : 'var(--ink4)',
+                marginTop: 4,
+                textAlign: 'right',
+              }}>
+                {formatTime(m.createdAt)}
+                {m.isMine && <span style={{ marginLeft: 4 }}>{m.isRead ? '✓✓' : '✓'}</span>}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Suggested prompt */}
+      {todayPrompt && data && data.messages.length === 0 && (
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Sugerencia de hoy
+          </div>
+          <button
+            onClick={() => setText(todayPrompt)}
+            style={{
+              background: 'var(--teal-l)', color: 'var(--teal)',
+              border: '1px solid rgba(0,140,165,0.25)',
+              borderRadius: 20, padding: '5px 14px',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            &ldquo;{todayPrompt}&rdquo;
+          </button>
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{
+        borderTop: '1px solid var(--border)',
+        padding: '12px 14px',
+        display: 'flex', gap: 10, alignItems: 'flex-end',
+      }}>
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(text) }
+          }}
+          placeholder={`Escribile a ${buddyName}…`}
+          rows={2}
+          maxLength={500}
+          style={{
+            flex: 1,
+            border: '1.5px solid var(--border)',
+            borderRadius: 10, padding: '8px 12px',
+            fontSize: 13, lineHeight: 1.5,
+            fontFamily: 'inherit', resize: 'none',
+            outline: 'none', background: 'var(--bg)',
+            color: 'var(--ink)',
+            transition: 'border-color .15s',
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--teal)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <span style={{ fontSize: 10, color: text.length > 450 ? 'var(--coral)' : 'var(--ink4)' }}>
+            {text.length}/500
+          </span>
+          <button
+            onClick={() => send(text)}
+            disabled={!text.trim() || sending}
+            style={{
+              background: text.trim() && !sending ? 'var(--teal)' : 'var(--ink4)',
+              color: '#fff', border: 'none', borderRadius: 10,
+              padding: '9px 18px', fontSize: 13, fontWeight: 700,
+              cursor: text.trim() && !sending ? 'pointer' : 'default',
+              transition: 'background .15s',
+              flexShrink: 0,
+            }}
+          >
+            {sending ? '…' : 'Enviar'}
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ padding: '0 16px 12px', fontSize: 12, color: 'var(--coral)' }}>
+          {error}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function PodPage() {
@@ -564,7 +807,7 @@ export default function PodPage() {
         </div>
       </div>
 
-      {/* ── Buddy highlight (only if not already visible as leader) ── */}
+      {/* ── Buddy highlight + chat ── */}
       {buddy && (
         <div className="pod-section" style={{ marginBottom: 24 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--ink)', marginBottom: 10 }}>
@@ -606,6 +849,11 @@ export default function PodPage() {
             }}>
               Buddy
             </div>
+          </div>
+
+          {/* Buddy chat thread */}
+          <div style={{ marginTop: 16 }}>
+            <BuddyChat buddy={buddy} />
           </div>
         </div>
       )}
