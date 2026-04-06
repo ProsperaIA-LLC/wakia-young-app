@@ -514,6 +514,13 @@ STRIPE_PRICE_LATAM_EARLY=
 
 # App
 NEXT_PUBLIC_APP_URL=
+
+# Email (Resend) — para emails de consentimiento parental
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=           # ej: noreply@prosperayoung.ai
+
+# Seguridad — token HMAC para links de consentimiento parental
+CONSENT_TOKEN_SECRET=        # string aleatorio largo, ej: openssl rand -base64 32
 ```
 
 ---

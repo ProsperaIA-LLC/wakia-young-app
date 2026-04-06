@@ -66,13 +66,15 @@ export async function GET() {
   const cohortId = cohort.id
   const currentWeek = cohort.current_week
 
-  // ── 4. Parallel: views + alerts + pod summaries + deliverables ───────────────
+  // ── 4. Parallel: views + alerts + pod summaries + deliverables + current week ─
   const [
     overviewRes,
     studentsRes,
     alertsRes,
     podSummariesRes,
     deliverablesRes,
+    currentWeekRes,
+    nextWeekRes,
   ] = await Promise.all([
     // a. cohort_overview view — aggregates per cohort
     supabase
@@ -127,6 +129,22 @@ export async function GET() {
       .eq('status', 'submitted')
       .order('submitted_at', { ascending: false })
       .limit(5),
+
+    // f. Current week data (for session page)
+    supabase
+      .from('weeks')
+      .select('title, deliverable_description, opening_question')
+      .eq('cohort_id', cohortId)
+      .eq('week_number', currentWeek)
+      .maybeSingle(),
+
+    // g. Next week opening question (for session page "pregunta de apertura")
+    supabase
+      .from('weeks')
+      .select('opening_question')
+      .eq('cohort_id', cohortId)
+      .eq('week_number', currentWeek + 1)
+      .maybeSingle(),
   ])
 
   // ── 5. Shape: overview ───────────────────────────────────────────────────────
@@ -262,9 +280,17 @@ export async function GET() {
   })
 
   // ── 10. Final response ────────────────────────────────────────────────────────
+  const weekData = currentWeekRes.data
+  const cohortWithWeek = {
+    ...cohort,
+    weekTitle:               weekData?.title ?? null,
+    deliverableDescription:  weekData?.deliverable_description ?? null,
+    nextWeekQuestion:        nextWeekRes.data?.opening_question ?? null,
+  }
+
   const payload: MentorDashboardData & { mentor: typeof profile } = {
     mentor: profile,
-    cohort,
+    cohort: cohortWithWeek,
     overview: overview ?? {
       cohort_id: cohortId,
       cohort_name: cohort.name,

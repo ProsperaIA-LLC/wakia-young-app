@@ -6,9 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 
 interface ReflectionRow {
   id: string
-  q1: string | null
-  q2: string | null
-  q3: string | null
+  answer_q1: string | null
+  answer_q2: string | null
   mentor_feedback: string | null
   submitted_at: string | null
   created_at: string
@@ -51,7 +50,7 @@ export default function ReflectionsPage() {
       const { data } = await supabase
         .from('reflections')
         .select(`
-          id, q1, q2, q3, mentor_feedback, submitted_at, created_at,
+          id, answer_q1, answer_q2, mentor_feedback, submitted_at, created_at,
           users!reflections_user_id_fkey ( id, full_name, nickname, country ),
           weeks!reflections_week_id_fkey ( week_number, title )
         `)
@@ -195,9 +194,8 @@ export default function ReflectionsPage() {
               {/* Answers */}
               <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { label: '¿Qué aprendiste esta semana?', value: r.q1 },
-                  { label: '¿Qué cambiarás la semana que viene?', value: r.q2 },
-                  { label: '¿Qué fue lo más difícil?', value: r.q3 },
+                  { label: '¿Qué aprendiste esta semana?', value: r.answer_q1 },
+                  { label: '¿Qué cambiarás la semana que viene?', value: r.answer_q2 },
                 ].filter(q => q.value).map(q => (
                   <div key={q.label}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
