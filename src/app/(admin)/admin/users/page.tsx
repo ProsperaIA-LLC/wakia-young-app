@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -42,6 +42,19 @@ function fmtDate(iso: string) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const COUNTRIES = [
+  'AR','BO','CL','CO','CR','CU','DO','EC','SV','GT',
+  'HN','MX','NI','PA','PY','PE','PR','UY','VE','US',
+]
+const COUNTRY_NAMES: Record<string, string> = {
+  AR:'Argentina',BO:'Bolivia',CL:'Chile',CO:'Colombia',CR:'Costa Rica',
+  CU:'Cuba',DO:'República Dominicana',EC:'Ecuador',SV:'El Salvador',
+  GT:'Guatemala',HN:'Honduras',MX:'México',NI:'Nicaragua',PA:'Panamá',
+  PY:'Paraguay',PE:'Perú',PR:'Puerto Rico',UY:'Uruguay',VE:'Venezuela',US:'Estados Unidos',
+}
+
+const EMPTY_FORM = { email:'', full_name:'', nickname:'', role:'mentor' as 'student'|'mentor', country:'MX', age:'' }
+
 export default function AdminUsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<UserRow[]>([])
@@ -50,12 +63,54 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState<'all' | 'student' | 'mentor' | 'admin'>('all')
   const [updating, setUpdating] = useState<string | null>(null)
 
+  // Create user modal
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createSuccess, setCreateSuccess] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     fetch('/api/admin/users')
       .then(r => r.json())
       .then(d => { setUsers(d.users ?? []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    setCreating(true)
+    setCreateError(null)
+    const res = await fetch('/api/admin/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.email,
+        full_name: form.full_name,
+        nickname: form.nickname || undefined,
+        role: form.role,
+        country: form.country,
+        age: form.role === 'student' && form.age ? Number(form.age) : undefined,
+        market: form.country === 'US' ? 'USA' : 'LATAM',
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setCreateError(data.error ?? 'Error al crear el usuario')
+      setCreating(false)
+      return
+    }
+    setCreateSuccess(true)
+    setCreating(false)
+    // Refresh user list after short delay
+    setTimeout(() => {
+      setShowModal(false)
+      setCreateSuccess(false)
+      setForm(EMPTY_FORM)
+      fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users ?? []))
+    }, 1800)
+  }
 
   async function updateRole(userId: string, newRole: string) {
     setUpdating(userId)
@@ -108,18 +163,157 @@ export default function AdminUsersPage() {
             {users.length} usuarios registrados
           </p>
         </div>
-        <input
-          type="text"
-          placeholder="Buscar por nombre o email..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            padding: '9px 14px', border: '1px solid var(--border)',
-            borderRadius: 10, fontSize: 13, background: 'var(--white)',
-            color: 'var(--ink)', outline: 'none', width: 240,
-          }}
-        />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Buscar por nombre o email..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              padding: '9px 14px', border: '1px solid var(--border)',
+              borderRadius: 10, fontSize: 13, background: 'var(--white)',
+              color: 'var(--ink)', outline: 'none', width: 220,
+            }}
+          />
+          <button
+            onClick={() => { setShowModal(true); setCreateError(null); setCreateSuccess(false) }}
+            style={{
+              padding: '9px 18px', background: 'var(--green)', color: '#fff',
+              border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            + Crear usuario
+          </button>
+        </div>
       </div>
+
+      {/* ── Create user modal ── */}
+      {showModal && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); setForm(EMPTY_FORM); setCreateError(null) } }}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 200, padding: 24,
+          }}
+        >
+          <div
+            ref={dialogRef}
+            style={{
+              background: 'var(--white)', borderRadius: 16, padding: '32px 28px',
+              width: '100%', maxWidth: 440, boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+              <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0 }}>Crear usuario</h2>
+              <button
+                onClick={() => { setShowModal(false); setForm(EMPTY_FORM); setCreateError(null) }}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink3)', lineHeight: 1 }}
+              >×</button>
+            </div>
+
+            {createSuccess ? (
+              <div style={{ background: 'var(--green-l)', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>✓</div>
+                <p style={{ fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>Usuario creado</p>
+                <p style={{ color: 'var(--ink3)', fontSize: 13, margin: 0 }}>Se envió un email de invitación a <strong>{form.email}</strong></p>
+              </div>
+            ) : (
+              <form onSubmit={handleCreate}>
+                {/* Role toggle */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+                  {(['mentor', 'student'] as const).map(r => (
+                    <button
+                      key={r} type="button"
+                      onClick={() => setForm(f => ({ ...f, role: r }))}
+                      style={{
+                        flex: 1, padding: '9px', borderRadius: 9, fontWeight: 700, fontSize: 13,
+                        cursor: 'pointer', border: '2px solid',
+                        borderColor: form.role === r ? (r === 'mentor' ? 'var(--magenta)' : 'var(--teal)') : 'var(--border)',
+                        background: form.role === r ? (r === 'mentor' ? 'var(--mag-l)' : 'var(--teal-l)') : 'var(--bg)',
+                        color: form.role === r ? (r === 'mentor' ? 'var(--magenta)' : 'var(--teal)') : 'var(--ink3)',
+                      }}
+                    >
+                      {r === 'mentor' ? 'Mentor' : 'Estudiante'}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--ink3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</label>
+                    <input type="email" required value={form.email}
+                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                      placeholder="usuario@email.com"
+                      style={{ width: '100%', padding: '10px 13px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 14, background: 'var(--bg2)', color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--ink3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Nombre completo</label>
+                      <input type="text" required value={form.full_name}
+                        onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                        placeholder="Ana García"
+                        style={{ width: '100%', padding: '10px 13px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 14, background: 'var(--bg2)', color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--ink3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Apodo</label>
+                      <input type="text" value={form.nickname}
+                        onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
+                        placeholder="Ana (opcional)"
+                        style={{ width: '100%', padding: '10px 13px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 14, background: 'var(--bg2)', color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: form.role === 'student' ? '1fr 1fr' : '1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--ink3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>País</label>
+                      <select value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 13px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 14, background: 'var(--bg2)', color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }}
+                      >
+                        {COUNTRIES.map(c => <option key={c} value={c}>{COUNTRY_NAMES[c]}</option>)}
+                      </select>
+                    </div>
+                    {form.role === 'student' && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--ink3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Edad</label>
+                        <input type="number" min={14} max={18} value={form.age}
+                          onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+                          placeholder="16"
+                          style={{ width: '100%', padding: '10px 13px', border: '1.5px solid var(--border)', borderRadius: 9, fontSize: 14, background: 'var(--bg2)', color: 'var(--ink)', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {createError && (
+                    <p style={{ color: 'var(--coral)', fontSize: 13, background: 'var(--coral-l)', padding: '9px 13px', borderRadius: 8, margin: 0 }}>
+                      {createError}
+                    </p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                    <button type="button" onClick={() => { setShowModal(false); setForm(EMPTY_FORM); setCreateError(null) }}
+                      style={{ flex: 1, padding: '11px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--bg)', fontWeight: 600, fontSize: 14, cursor: 'pointer', color: 'var(--ink)' }}
+                    >
+                      Cancelar
+                    </button>
+                    <button type="submit" disabled={creating}
+                      style={{ flex: 2, padding: '11px', borderRadius: 9, border: 'none', background: creating ? 'var(--ink4)' : 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: creating ? 'not-allowed' : 'pointer' }}
+                    >
+                      {creating ? 'Creando...' : `Crear ${form.role === 'mentor' ? 'Mentor' : 'Estudiante'}`}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Role filter pills */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>

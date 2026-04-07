@@ -150,6 +150,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Links to other panels */}
           <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <button
+              onClick={() => router.push('/dashboard')}
+              style={{
+                width: '100%', padding: '7px 12px', marginBottom: 6,
+                background: 'rgba(255,255,255,0.06)',
+                border: 'none', borderRadius: 8,
+                color: 'rgba(255,255,255,0.5)', fontSize: 12,
+                fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              → Vista Estudiante
+            </button>
+            <button
               onClick={() => router.push('/mentor/dashboard')}
               style={{
                 width: '100%', padding: '7px 12px', marginBottom: 6,
@@ -159,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 fontWeight: 600, cursor: 'pointer', textAlign: 'left',
               }}
             >
-              → Panel Mentor
+              → Vista Mentor
             </button>
             <button
               onClick={async () => {
