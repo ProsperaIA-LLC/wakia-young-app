@@ -27,8 +27,9 @@ interface DeliverableRow {
 interface ReflectionRow {
   id: string
   week_id: string
-  answer_q1: string | null
-  answer_q2: string | null
+  q1: string | null
+  q2: string | null
+  q3: string | null
   mentor_feedback: string | null
   created_at: string
   week: { week_number: number; title: string } | null
@@ -144,7 +145,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
       // All submitted reflections
       const { data: reflData } = await supabase
         .from('reflections')
-        .select('id, answer_q1, answer_q2, mentor_feedback, created_at, week_id, weeks(week_number, title)')
+        .select('id, q1, q2, q3, mentor_feedback, created_at, week_id, weeks(week_number, title)')
         .eq('user_id', id)
         .order('created_at', { ascending: false })
       if (reflData) setReflections(reflData.map((r: any) => ({ ...r, week: r.weeks ?? null })))
@@ -193,9 +194,14 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   async function saveReflectionFeedback() {
     if (!feedbackId || !feedback.trim()) return
     setSavingFeedback(true)
-    const supabase = createClient()
-    await supabase.from('reflections').update({ mentor_feedback: feedback }).eq('id', feedbackId)
-    setReflections(prev => prev.map(r => r.id === feedbackId ? { ...r, mentor_feedback: feedback } : r))
+    const res = await fetch('/api/reflections', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reflectionId: feedbackId, mentorFeedback: feedback }),
+    })
+    if (res.ok) {
+      setReflections(prev => prev.map(r => r.id === feedbackId ? { ...r, mentor_feedback: feedback } : r))
+    }
     setFeedbackId(null)
     setFeedback('')
     setSavingFeedback(false)
@@ -345,8 +351,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
                 {[
-                  { label: '¿Qué aprendiste esta semana?', value: r.answer_q1 },
-                  { label: '¿Qué cambiarás la semana que viene?', value: r.answer_q2 },
+                  { label: '¿Qué aprendiste esta semana?', value: r.q1 },
+                  { label: '¿Qué cambiarás la semana que viene?', value: r.q2 },
+                  { label: '¿Qué hiciste diferente esta semana?', value: r.q3 },
                 ].map(({ label, value }) => value && (
                   <div key={label}>
                     <p style={{ fontSize: '11px', fontWeight: 600, color: '#9CA3AF', margin: '0 0 3px', textTransform: 'uppercase' }}>{label}</p>
