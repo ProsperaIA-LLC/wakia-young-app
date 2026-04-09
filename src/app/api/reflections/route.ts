@@ -1,16 +1,13 @@
-// POST /api/reflections
-// Submit a Finnish-method reflection for the authenticated student.
+// POST  /api/reflections — Student submits a reflection (Sundays only, deliverable required)
+// PATCH /api/reflections — Mentor saves feedback on a reflection (mentor/admin role required)
 //
 // Business rules enforced SERVER-SIDE (CONTEXT.md §11):
 //   Rule #1 — Reflections unlock ONLY on Sundays.
-//             new Date().getDay() === 0 is checked here, never trusted from the client.
-//             If not Sunday → 403. Full stop. No bypass possible.
 //   Rule #2 — Student cannot submit reflection without submitting deliverable first.
-//             deliverable.status must be 'submitted' or 'reviewed' for this week.
-//             If not → 403. The client lock UI is a UX convenience only; this is the real gate.
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -151,4 +148,48 @@ export async function POST(req: NextRequest) {
   })
 
   return NextResponse.json({ reflection }, { status: 200 })
+}
+
+// ── PATCH /api/reflections — Mentor saves feedback ──────────────────────────
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient()
+
+  // Auth: must be mentor or admin
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  if (!authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase
+    .from('users').select('role').eq('id', authUser.id).single()
+  if (!profile || !['mentor', 'admin'].includes(profile.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  let body: { reflectionId?: string; mentorFeedback?: string }
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { reflectionId, mentorFeedback } = body
+  if (!reflectionId || typeof mentorFeedback !== 'string' || !mentorFeedback.trim()) {
+    return NextResponse.json({ error: 'reflectionId and mentorFeedback are required' }, { status: 400 })
+  }
+
+  // Use service role to bypass RLS (reflections_update_own only allows the student)
+  const service = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { error } = await service
+    .from('reflections')
+    .update({ mentor_feedback: mentorFeedback.trim() })
+    .eq('id', reflectionId)
+
+  if (error) {
+    console.error('[PATCH /api/reflections]', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
 }
