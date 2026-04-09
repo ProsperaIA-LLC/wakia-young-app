@@ -53,7 +53,7 @@ function ConsentForm() {
         </h2>
         <p style={{ color: 'var(--ink2)', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
           Gracias por autorizar la participación de <strong>{confirmedName}</strong> en
-          Prospera Young AI. Tu hij@ ya puede acceder a todos los contenidos del programa.
+          WakiaYoung. Tu hij@ ya puede acceder a todos los contenidos del programa.
         </p>
         <p style={{ color: 'var(--ink3)', fontSize: 13, marginTop: 16 }}>
           Podés cerrar esta ventana.
@@ -73,8 +73,8 @@ function ConsentForm() {
         <p style={{ color: 'var(--ink2)', fontSize: 15, margin: 0 }}>
           Este enlace de consentimiento no es válido o ya expiró.
           Revisá el email que recibiste o contactá a{' '}
-          <a href="mailto:hola@prosperayoung.ai" style={{ color: 'var(--teal)' }}>
-            hola@prosperayoung.ai
+          <a href="mailto:hola@wakia.app" style={{ color: 'var(--teal)' }}>
+            hola@wakia.app
           </a>
           .
         </p>
@@ -99,7 +99,7 @@ function ConsentForm() {
         Autorización de participación
       </h1>
       <p style={{ margin: '0 0 24px', color: 'var(--ink3)', fontSize: 14, textAlign: 'center' }}>
-        Prospera Young AI · Programa intensivo 6 semanas
+        WakiaYoung · Programa intensivo 6 semanas
       </p>
 
       {/* Student card */}
@@ -118,7 +118,7 @@ function ConsentForm() {
       {/* Program info */}
       <div style={{ marginBottom: 24 }}>
         <p style={{ margin: '0 0 12px', color: 'var(--ink2)', fontSize: 14, lineHeight: 1.6 }}>
-          Tu hij@ se inscribió en <strong>Prospera Young AI</strong>, un programa virtual
+          Tu hij@ se inscribió en <strong>WakiaYoung</strong>, un programa virtual
           intensivo de 6 semanas donde estudiantes de 14 a 18 años construyen productos
           reales usando inteligencia artificial.
         </p>
@@ -192,7 +192,7 @@ export default function ConsentPage() {
             fontWeight: 800, fontSize: 15, padding: '8px 18px', borderRadius: 10,
             letterSpacing: '-0.01em',
           }}>
-            Prospera Young AI
+            WakiaYoung
           </span>
         </div>
 
@@ -208,8 +208,8 @@ export default function ConsentPage() {
 
         <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink4)', marginTop: 20 }}>
           ¿Preguntas? Escribinos a{' '}
-          <a href="mailto:hola@prosperayoung.ai" style={{ color: 'var(--teal)' }}>
-            hola@prosperayoung.ai
+          <a href="mailto:hola@wakia.app" style={{ color: 'var(--teal)' }}>
+            hola@wakia.app
           </a>
         </p>
       </div>

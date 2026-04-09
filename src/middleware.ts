@@ -60,8 +60,17 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // 5. Logged-in users visiting /login or /register → /dashboard
+    // 5. Logged-in users visiting /login or /register → role-based dashboard
     if (isAuthRoute) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role, nickname')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.nickname) return redirect(request, '/onboarding')
+      if (profile.role === 'admin')  return redirect(request, '/admin/dashboard')
+      if (profile.role === 'mentor') return redirect(request, '/mentor/dashboard')
       return redirect(request, '/dashboard')
     }
   }

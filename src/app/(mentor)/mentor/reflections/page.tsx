@@ -101,7 +101,7 @@ export default function ReflectionsPage() {
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontWeight: 800, fontSize: 22, margin: '0 0 4px', color: 'var(--ink)' }}>Reflexiones</h1>
         <p style={{ fontSize: 13, color: 'var(--ink3)', margin: 0 }}>
-          {reflections.length} reflexión{reflections.length !== 1 ? 'es' : ''} enviadas · Podés dar feedback por semana
+          {reflections.length} reflexión{reflections.length !== 1 ? 'es' : ''} enviadas · Puedes dar feedback por semana
         </p>
       </div>
 

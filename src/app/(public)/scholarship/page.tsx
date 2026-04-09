@@ -144,9 +144,9 @@ export default function ScholarshipPage() {
             Recibimos tu solicitud de beca. La revisaremos en los próximos <strong style={{ color: 'var(--ink)' }}>5 días hábiles</strong> y te contactaremos por email con nuestra decisión.
           </p>
           <p style={{ color: 'var(--ink3)', fontSize: '13px', margin: '0 0 28px' }}>
-            Mientras tanto, podés explorar el programa o escribirnos a{' '}
-            <a href="mailto:hola@prosperayoung.ai" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>
-              hola@prosperayoung.ai
+            Mientras tanto, puedes explorar el programa o escribirnos a{' '}
+            <a href="mailto:hola@wakia.app" style={{ color: 'var(--teal)', textDecoration: 'none', fontWeight: 600 }}>
+              hola@wakia.app
             </a>
           </p>
           <Link href="/" style={{
@@ -180,7 +180,7 @@ export default function ScholarshipPage() {
             borderRadius: '8px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontWeight: 900, fontSize: '16px', color: 'var(--navy)',
           }}>P</div>
-          <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)' }}>Prospera Young AI</span>
+          <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)' }}>WakiaYoung</span>
         </Link>
         <Link href="/login" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink3)', textDecoration: 'none' }}>
           Ingresar
@@ -295,7 +295,7 @@ export default function ScholarshipPage() {
                 value={form.motivation_letter}
                 onChange={e => update('motivation_letter', e.target.value)}
                 required
-                placeholder="Contanos: ¿quién sos?, ¿por qué querés participar en Prospera Young AI?, ¿qué problema te gustaría resolver con tecnología?, y ¿por qué necesitás la beca? Sé honesto/a — no hay respuesta incorrecta."
+                placeholder="Contanos: ¿quién sos?, ¿por qué querés participar en WakiaYoung?, ¿qué problema te gustaría resolver con tecnología?, y ¿por qué necesitás la beca? Sé honesto/a — no hay respuesta incorrecta."
               />
               {words > 0 && !wordsOk && (
                 <p style={{ ...hint, color: 'var(--coral)', fontWeight: 600 }}>

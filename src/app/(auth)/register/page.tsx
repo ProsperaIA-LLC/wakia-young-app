@@ -130,7 +130,7 @@ export default function RegisterPage() {
             Crear cuenta
           </h1>
           <p style={{ color: 'var(--ink3)', fontSize: '13px', marginTop: '6px' }}>
-            Prospera Young AI — programa de 6 semanas
+            WakiaYoung — programa de 6 semanas
           </p>
         </div>
 

@@ -1,5 +1,5 @@
 /**
- * lib/stripe/checkout.ts — Prospera Young AI
+ * lib/stripe/checkout.ts — WakiaYoung
  *
  * Stripe client singleton + price ID resolver.
  * All pricing logic lives here. Never put price IDs in client code.

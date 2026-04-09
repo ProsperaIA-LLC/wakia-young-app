@@ -1,5 +1,5 @@
 -- ============================================================
--- DEMO USER — Prospera Young AI
+-- DEMO USER — WakiaYoung
 -- ============================================================
 -- Crea un usuario "visitante demo" con acceso a AMBOS roles:
 --   • /mentor/*  (dashboard, students, pods, session, etc.)

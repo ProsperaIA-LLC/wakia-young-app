@@ -224,7 +224,7 @@ function PodLeaderSummaryForm({
             ref={textareaRef}
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder={'Escribí 3 líneas:\n1. Lo que el pod logró esta semana\n2. Quién necesita apoyo\n3. El plan para la próxima semana'}
+            placeholder={'Escribe 3 líneas:\n1. Lo que el pod logró esta semana\n2. Quién necesita apoyo\n3. El plan para la próxima semana'}
             rows={4}
             maxLength={1000}
             style={{
@@ -316,14 +316,14 @@ function PodLeaderDuties() {
       borderRadius: 16, padding: 20, marginBottom: 24,
     }}>
       <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 10 }}>
-        ⭐ Sos el Pod Leader esta semana
+        ⭐ Eres el Pod Leader esta semana
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
         {[
-          'Coordiná el check-in del viernes (20 min por voz)',
-          'Recordá a tus buddies sus check-ins diarios',
-          'El domingo: enviá el resumen de 3 líneas al canal del mentor',
-          'Si alguien está bloqueado, escalá al mentor',
+          'Coordina el check-in del viernes (20 min por voz)',
+          'Recuerda a tus buddies sus check-ins diarios',
+          'El domingo: envía el resumen de 3 líneas al canal del mentor',
+          'Si alguien está bloqueado, escala al mentor',
         ].map(duty => (
           <div key={duty} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: 'var(--ink2)' }}>
             <span style={{ color: 'var(--gold)', marginTop: 1 }}>✦</span>
@@ -363,7 +363,7 @@ function LoadingSkeleton() {
 
 const DAY_PROMPTS: Record<number, string> = {
   1: 'Mi plan esta semana es…',
-  3: '¿Cómo vas? ¿Necesitás algo?',
+  3: '¿Cómo vas? ¿Necesitas algo?',
   5: '¿Qué vas a mostrar mañana en el check-in?',
   0: 'Vi tu entregable. Lo que más me gustó fue…',
 }
@@ -648,12 +648,12 @@ export default function PodPage() {
         <div style={{ fontSize: 40, marginBottom: 16 }}>🫂</div>
         <h2 style={{ fontWeight: 800, fontSize: 20, marginBottom: 8 }}>
           {error === 'No estás asignado a ningún pod todavía'
-            ? 'Todavía no tenés un pod'
+            ? 'Todavía no tienes un pod'
             : 'No se pudo cargar el pod'}
         </h2>
         <p style={{ color: 'var(--ink3)', fontSize: 14 }}>
           {error === 'No estás asignado a ningún pod todavía'
-            ? 'Tu mentor te asignará a un pod pronto. Mientras tanto, explorá el contenido de esta semana.'
+            ? 'Tu mentor te asignará a un pod pronto. Mientras tanto, explora el contenido de esta semana.'
             : error}
         </p>
       </div>
@@ -900,8 +900,8 @@ export default function PodPage() {
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink2)' }}>
               {amPodLeader
-                ? 'Como Pod Leader, escribiles hoy y escalá al mentor si no responden.'
-                : 'Tu buddy o el Pod Leader se está encargando. Si podés, escribiles vos también.'}
+                ? 'Como Pod Leader, escríbeles hoy y escala al mentor si no responden.'
+                : 'Tu buddy o el Pod Leader se está encargando. Si puedes, escríbeles tú también.'}
             </div>
           </div>
         </div>

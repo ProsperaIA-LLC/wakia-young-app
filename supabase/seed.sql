@@ -1,5 +1,5 @@
 -- ============================================================
--- SEED — Prospera Young AI · Cohorte de prueba
+-- SEED — WakiaYoung · Cohorte de prueba
 -- ============================================================
 -- Cómo usar:
 --   1. Abrí Supabase Dashboard → SQL Editor
@@ -48,7 +48,7 @@ BEGIN
   )
   values (
     gen_random_uuid(),
-    'Cohorte 1 — Prospera Young AI 2026',
+    'Cohorte 1 — WakiaYoung 2026',
     'LATAM',
     v_start,
     v_start + 41,   -- 42 días = 6 semanas

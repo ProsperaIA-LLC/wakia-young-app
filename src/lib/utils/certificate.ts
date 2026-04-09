@@ -1,5 +1,5 @@
 /**
- * certificate.ts — Prospera Young AI
+ * certificate.ts — WakiaYoung
  *
  * Generates a PDF certificate for students who meet all 4 completion conditions
  * defined in CONTEXT.md §9:
@@ -242,7 +242,7 @@ export async function generateCertificate(
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(...C.teal)
-  doc.text('Prospera Young AI', W / 2, 112, { align: 'center' })
+  doc.text('WakiaYoung', W / 2, 112, { align: 'center' })
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8.5)

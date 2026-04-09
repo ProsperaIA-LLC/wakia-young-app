@@ -44,7 +44,7 @@ const INCLUDED = [
   { icon: '🎯', title: 'Mentoría semanal', desc: 'Mentores que revisan tu trabajo y te dan feedback real. No teoria — revisión de tu proyecto.', color: '#00c896', border: 'rgba(0,200,150,0.25)' },
   { icon: '🏆', title: 'Certificación FGU', desc: 'Certificado internacional avalado por la Fundación Gestión y Urbanismo al completar el programa.', color: '#e0a326', border: 'rgba(224,163,38,0.25)' },
   { icon: '💡', title: '1 proyecto tuyo, real', desc: 'No un ejercicio. Un producto que resuelve un problema que tú elegiste, publicado y funcionando.', color: '#ff5c35', border: 'rgba(255,92,53,0.25)' },
-  { icon: '♾️', title: 'Comunidad vitalicia', desc: 'Acceso permanente a la red de builders latinos de Prospera Young. Tu comunidad de por vida.', color: '#7c3aed', border: 'rgba(124,58,237,0.25)' },
+  { icon: '♾️', title: 'Comunidad vitalicia', desc: 'Acceso permanente a la red de builders latinos de WakiaYoung. Tu comunidad de por vida.', color: '#7c3aed', border: 'rgba(124,58,237,0.25)' },
 ]
 
 const METRICS = [
@@ -144,7 +144,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
           {/* Logo */}
           <div className="display" style={{ fontWeight: 900, fontSize: 20, color: '#ffffff', letterSpacing: '-0.02em', flexShrink: 0 }}>
-            Prospera Young <span style={{ color: '#00c896' }}>AI</span>
+            WakiaYoung <span style={{ color: '#00c896' }}>AI</span>
           </div>
 
           {/* Desktop links */}
@@ -627,7 +627,7 @@ export default function LandingPage() {
           </div>
           <div className="sans" style={{ marginTop: 28, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
             ¿Preguntas? Escribinos a{' '}
-            <a href="mailto:hola@prosperayoung.ai" style={{ color: '#00c896', textDecoration: 'none', fontWeight: 600 }}>hola@prosperayoung.ai</a>
+            <a href="mailto:hola@wakia.app" style={{ color: '#00c896', textDecoration: 'none', fontWeight: 600 }}>hola@wakia.app</a>
           </div>
         </div>
       </section>
@@ -636,7 +636,7 @@ export default function LandingPage() {
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '32px 24px', background: 'rgba(0,0,0,0.2)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div className="display" style={{ fontWeight: 900, fontSize: 18, color: '#ffffff', letterSpacing: '-0.02em' }}>
-            Prospera Young <span style={{ color: '#00c896' }}>AI</span>
+            WakiaYoung <span style={{ color: '#00c896' }}>AI</span>
           </div>
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
             {[['#programa','El programa'],['#fases','Fases'],['#luna','Luna IA'],['#precio','Precio'],['/scholarship','Becas'],['/login','Iniciar sesión']].map(([href, label]) => (
@@ -644,7 +644,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="sans" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
-            © 2026 Prospera Young AI · Todos los derechos reservados
+            © 2026 WakiaYoung · Todos los derechos reservados
           </div>
         </div>
       </footer>

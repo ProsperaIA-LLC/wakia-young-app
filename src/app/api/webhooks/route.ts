@@ -53,9 +53,9 @@ async function sendParentConsentEmail(opts: {
     return
   }
 
-  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://prosperayoung.ai'
-  const from    = process.env.RESEND_FROM_EMAIL   ?? 'noreply@prosperayoung.ai'
-  const subject = `Autorización requerida: ${opts.studentName} se inscribió en Prospera Young AI`
+  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://wakia.app'
+  const from    = process.env.RESEND_FROM_EMAIL   ?? 'noreply@wakia.app'
+  const subject = `Autorización requerida: ${opts.studentName} se inscribió en WakiaYoung`
   const token   = generateConsentToken(opts.studentId)
 
   const html = `
@@ -67,7 +67,7 @@ async function sendParentConsentEmail(opts: {
 
     <!-- Header -->
     <div style="background:#0E2A47;padding:28px 32px;">
-      <div style="font-weight:900;font-size:18px;color:#00c896;letter-spacing:-0.02em;">Prospera Young AI</div>
+      <div style="font-weight:900;font-size:18px;color:#00c896;letter-spacing:-0.02em;">WakiaYoung</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;">Programa de IA para jóvenes latinos</div>
     </div>
 
@@ -76,7 +76,7 @@ async function sendParentConsentEmail(opts: {
       <p style="font-size:15px;color:#111110;margin:0 0 16px;">Hola, <strong>${opts.parentName}</strong>:</p>
 
       <p style="font-size:15px;color:#3a3936;line-height:1.7;margin:0 0 16px;">
-        <strong style="color:#111110;">${opts.studentName}</strong> se inscribió en <strong>Prospera Young AI</strong> —
+        <strong style="color:#111110;">${opts.studentName}</strong> se inscribió en <strong>WakiaYoung</strong> —
         un programa intensivo de 6 semanas donde jóvenes de 14 a 18 años construyen productos reales con inteligencia artificial.
       </p>
 
@@ -103,7 +103,7 @@ async function sendParentConsentEmail(opts: {
       </div>
 
       <p style="font-size:13px;color:#8a8884;line-height:1.6;margin:0;">
-        Si tenés preguntas, escribinos a <a href="mailto:hola@prosperayoung.ai" style="color:#008ca5;">hola@prosperayoung.ai</a>.<br>
+        Si tenés preguntas, escribinos a <a href="mailto:hola@wakia.app" style="color:#008ca5;">hola@wakia.app</a>.<br>
         Mercado: <strong>${opts.market}</strong>
       </p>
     </div>
@@ -111,7 +111,7 @@ async function sendParentConsentEmail(opts: {
     <!-- Footer -->
     <div style="padding:16px 32px;border-top:1px solid rgba(17,17,16,0.08);">
       <p style="font-size:11px;color:#c5c2bb;margin:0;">
-        © 2025 Prospera IA LLC · Todos los derechos reservados
+        © 2025 Wakia · Todos los derechos reservados
       </p>
     </div>
   </div>

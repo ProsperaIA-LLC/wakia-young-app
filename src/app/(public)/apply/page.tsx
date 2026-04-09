@@ -113,7 +113,7 @@ function SuccessState({ studentName }: { studentName: string }) {
         </h1>
         <p style={{ color: 'var(--ink3)', fontSize: '15px', lineHeight: 1.7, margin: '0 0 8px' }}>
           {studentName ? `¡Bienvenido/a, ${studentName.split(' ')[0]}!` : '¡Bienvenido/a!'}{' '}
-          Tu lugar en Prospera Young AI está reservado.
+          Tu lugar en WakiaYoung está reservado.
         </p>
         <p style={{ color: 'var(--ink3)', fontSize: '14px', lineHeight: 1.7, margin: '0 0 28px' }}>
           Recibirás un email con tus datos de acceso en los próximos minutos. Revisá también la bandeja de spam.
@@ -128,8 +128,8 @@ function SuccessState({ studentName }: { studentName: string }) {
         </Link>
         <p style={{ marginTop: '16px', fontSize: '12px', color: 'var(--ink4)' }}>
           ¿Preguntas? Escribinos a{' '}
-          <a href="mailto:hola@prosperayoung.ai" style={{ color: 'var(--teal)', textDecoration: 'none' }}>
-            hola@prosperayoung.ai
+          <a href="mailto:hola@wakia.app" style={{ color: 'var(--teal)', textDecoration: 'none' }}>
+            hola@wakia.app
           </a>
         </p>
       </div>
@@ -215,7 +215,7 @@ function ApplyForm({ market, initPriceType }: { market: Market; initPriceType: P
                 Reservar tu lugar
               </div>
               <div style={{ fontSize: '13px', color: 'var(--ink3)' }}>
-                {MARKET_LABEL[market]} · Prospera Young AI
+                {MARKET_LABEL[market]} · WakiaYoung
               </div>
             </div>
           </div>
@@ -263,7 +263,7 @@ function ApplyForm({ market, initPriceType }: { market: Market; initPriceType: P
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--ink3)', marginTop: '2px' }}>
                         {pt === 'early'
-                          ? `Precio especial — primeros 21 días (ahorrás $${fullPrice - p})`
+                          ? `Precio especial — primeros 21 días (ahorras $${fullPrice - p})`
                           : 'Precio regular del programa'}
                       </div>
                     </div>
@@ -502,7 +502,7 @@ function ApplyPageInner() {
             borderRadius: '8px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontWeight: 900, fontSize: '16px', color: 'var(--navy)',
           }}>P</div>
-          <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)' }}>Prospera Young AI</span>
+          <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--ink)' }}>WakiaYoung</span>
         </Link>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <Link href="/scholarship" style={{ fontSize: '13px', color: 'var(--ink3)', textDecoration: 'none', fontWeight: 600 }}>

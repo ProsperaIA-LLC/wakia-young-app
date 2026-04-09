@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   const userId = verifyConsentToken(token)
   if (!userId) {
     return NextResponse.json(
-      { error: 'Enlace inválido o expirado. Revisá el email o contactá a hola@prosperayoung.ai.' },
+      { error: 'Enlace inválido o expirado. Revisá el email o contactá a hola@wakia.app.' },
       { status: 403 }
     )
   }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
   if (!student) {
     return NextResponse.json(
-      { error: 'Enlace inválido o expirado. Revisá el email o contactá a hola@prosperayoung.ai.' },
+      { error: 'Enlace inválido o expirado. Revisá el email o contactá a hola@wakia.app.' },
       { status: 404 }
     )
   }

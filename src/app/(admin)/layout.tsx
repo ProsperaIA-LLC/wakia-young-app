@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 900, fontSize: 13, color: 'var(--navy)', flexShrink: 0,
               }}>A</div>
-              <span style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Prospera</span>
+              <span style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Wakia</span>
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', paddingLeft: 41 }}>
               Panel Admin

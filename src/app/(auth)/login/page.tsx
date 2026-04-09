@@ -20,11 +20,17 @@ function LoginPageInner() {
 
   const [regForm, setRegForm] = useState({ fullName: '', email: '', country: '', age: '' })
 
+  const isDemo  = searchParams.get('demo') === 'true'
+  const demoEmail = searchParams.get('email') ?? ''
+
   useEffect(() => {
     if (searchParams.get('error') === 'auth') {
       setError('El código expiró o ya fue usado. Pedí uno nuevo.')
     }
-  }, [searchParams])
+    if (isDemo && demoEmail) {
+      setEmail(demoEmail)
+    }
+  }, [searchParams, isDemo, demoEmail])
 
   async function sendOtp() {
     if (!email) return
@@ -160,7 +166,7 @@ function LoginPageInner() {
                 borderRadius: '9px', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', fontWeight: 900, fontSize: '17px', color: 'var(--navy)',
               }}>P</div>
-              <span style={{ fontWeight: 800, fontSize: '18px', color: '#fff' }}>Prospera Young AI</span>
+              <span style={{ fontWeight: 800, fontSize: '18px', color: '#fff' }}>WakiaYoung</span>
             </div>
             <div>
               <h1 style={{ fontWeight: 800, fontSize: '32px', color: '#fff', lineHeight: 1.15, marginBottom: '16px' }}>
@@ -195,9 +201,24 @@ function LoginPageInner() {
           <div style={{ fontWeight: 800, fontSize: '22px', color: 'var(--ink)', marginBottom: '6px' }}>
             Bienvenido/a
           </div>
-          <div style={{ fontSize: '14px', color: 'var(--ink3)', marginBottom: '32px', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '14px', color: 'var(--ink3)', marginBottom: isDemo ? '16px' : '32px', lineHeight: 1.5 }}>
             Ingresá a tu portal o registrate para la próxima cohorte.
           </div>
+
+          {/* Demo enrollment success banner */}
+          {isDemo && (
+            <div style={{
+              background: 'var(--green-l)', border: '1.5px solid var(--green)',
+              borderRadius: '12px', padding: '14px 16px', marginBottom: '24px',
+            }}>
+              <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--green-d)', marginBottom: '3px' }}>
+                Inscripción recibida
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--ink2)', lineHeight: 1.6 }}>
+                Tu cuenta fue creada. Ingresá tu email abajo para recibir tu código de acceso.
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <div style={{

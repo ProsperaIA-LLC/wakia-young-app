@@ -27,7 +27,7 @@ const TIMEZONES = [
   { value: 'America/Argentina/Buenos_Aires', label: 'GMT-3 (Bs. As.)' },
 ]
 
-type Step = 1 | 2 | 3 | 'success'
+type Step = 1 | 2 | 3 | 'success' | 'pending-consent'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -44,7 +44,7 @@ export default function OnboardingPage() {
   const [c2, setC2] = useState(false)
   const [c3, setC3] = useState(false)
 
-  const progressPct = step === 'success' ? 100 : ((step as number) / 3) * 100
+  const progressPct = (step === 'success' || step === 'pending-consent') ? 100 : ((step as number) / 3) * 100
 
   async function handleFinish() {
     setLoading(true)
@@ -56,6 +56,7 @@ export default function OnboardingPage() {
       setLoading(false)
       return
     }
+    const age = Number(user.user_metadata?.age) || 0
     const market = country === 'US' ? 'USA' : 'LATAM'
     const fullName = user.user_metadata?.full_name || user.user_metadata?.nickname || nickname || user.email!.split('@')[0]
     const { error: upsertError } = await supabase
@@ -63,7 +64,9 @@ export default function OnboardingPage() {
       .upsert({
         id: user.id, email: user.email!, full_name: fullName,
         nickname: nickname || fullName, country, timezone, market,
-        avatar_url: avatar, parent_consent: true, role: 'student',
+        avatar_url: avatar, age: age || null,
+        parent_consent: age >= 18,  // under-18 must wait for parent email confirmation
+        role: 'student',
       }, { onConflict: 'id' })
     if (upsertError) {
       setError(`Error guardando perfil: ${upsertError.message}`)
@@ -78,9 +81,13 @@ export default function OnboardingPage() {
       setLoading(false)
       return
     }
-    setStep('success')
     setLoading(false)
-    setTimeout(() => { window.location.href = '/dashboard' }, 2000)
+    if (age < 18 && age > 0) {
+      setStep('pending-consent')
+    } else {
+      setStep('success')
+      setTimeout(() => { window.location.href = '/dashboard' }, 2000)
+    }
   }
 
   const fieldLabel: React.CSSProperties = {
@@ -325,7 +332,7 @@ export default function OnboardingPage() {
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{ fontSize: '52px', marginBottom: '16px' }}>🎉</div>
             <div style={{ fontWeight: 800, fontSize: '24px', color: 'var(--ink)', marginBottom: '10px' }}>
-              ¡Bienvenida, {nickname}!
+              ¡Bienvenid@, {nickname}!
             </div>
             <div style={{ fontSize: '14px', color: 'var(--ink3)', lineHeight: 1.7, marginBottom: '24px' }}>
               Tu cuenta está activa. Te asignamos a un pod según tu zona horaria.<br />
@@ -333,6 +340,36 @@ export default function OnboardingPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
               {['📍 Pod por asignar', '🗓 Semana 1 · Lunes', '🏆 Certificado FGU'].map(tag => (
+                <span key={tag} style={{
+                  background: 'var(--bg)', borderRadius: '20px', padding: '6px 14px',
+                  fontSize: '12px', fontWeight: 700, color: 'var(--ink2)',
+                }}>{tag}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── PENDING PARENT CONSENT (under-18) ── */}
+        {step === 'pending-consent' && (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: '52px', marginBottom: '16px' }}>📬</div>
+            <div style={{ fontWeight: 800, fontSize: '22px', color: 'var(--ink)', marginBottom: '10px' }}>
+              ¡Casi listo, {nickname}!
+            </div>
+            <div style={{ fontSize: '14px', color: 'var(--ink3)', lineHeight: 1.7, marginBottom: '20px' }}>
+              Le enviamos un email a tu madre/padre/tutor para confirmar tu participación.
+              Revisá con ellos y pediles que hagan clic en el link.
+            </div>
+            <div style={{
+              background: 'var(--gold-l)', border: '1px solid var(--gold)',
+              borderRadius: '12px', padding: '14px 16px',
+              fontSize: '13px', color: 'var(--ink2)', lineHeight: 1.6, marginBottom: '20px',
+            }}>
+              <strong>Mientras tanto</strong>, tu cuenta está creada pero el acceso al
+              programa se activa automáticamente cuando tu tutor confirme.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {['📍 Pod por asignar', '✉️ Email enviado al tutor', '🏆 Certificado FGU'].map(tag => (
                 <span key={tag} style={{
                   background: 'var(--bg)', borderRadius: '20px', padding: '6px 14px',
                   fontSize: '12px', fontWeight: 700, color: 'var(--ink2)',

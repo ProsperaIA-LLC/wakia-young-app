@@ -1,5 +1,5 @@
 // ============================================================
-// types/index.ts — Prospera Young AI
+// types/index.ts — WakiaYoung
 // All TypeScript interfaces matching the Supabase schema.
 // Import from here everywhere in the app.
 // ============================================================

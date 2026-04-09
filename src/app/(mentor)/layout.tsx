@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 const NAV_COHORT = [
@@ -71,6 +72,19 @@ function NavItem({
 export default function MentorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    async function checkRole() {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
+      setIsAdmin(data?.role === 'admin')
+    }
+    checkRole()
+  }, [])
 
   function isActive(href: string) {
     return pathname === href || (href !== '/mentor/dashboard' && pathname.startsWith(href))
@@ -116,7 +130,7 @@ export default function MentorLayout({ children }: { children: React.ReactNode }
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0,
               }}>M</div>
-              <span style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Prospera</span>
+              <span style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Wakia</span>
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', paddingLeft: 41 }}>
               Panel Mentor
@@ -155,7 +169,21 @@ export default function MentorLayout({ children }: { children: React.ReactNode }
             ))}
           </div>
 
-          <div style={{ padding: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ padding: 12, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {isAdmin && (
+              <button
+                onClick={() => router.push('/admin/dashboard')}
+                style={{
+                  width: '100%', padding: '8px 12px',
+                  background: 'rgba(165,8,107,0.2)',
+                  border: '1px solid rgba(165,8,107,0.4)', borderRadius: 8,
+                  color: 'var(--magenta)', fontSize: 12,
+                  fontWeight: 700, cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                ← Volver a Admin
+              </button>
+            )}
             <button
               onClick={async () => {
                 const { createClient } = await import('@/lib/supabase/client')

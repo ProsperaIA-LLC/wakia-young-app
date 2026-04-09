@@ -364,7 +364,7 @@ function DeliverableForm({
           }}
           value={content}
           onChange={e => setContent(e.target.value)}
-          placeholder={`Describí tu entregable. Sé específico/a — mencioná qué hiciste, con quién lo validaste, y qué aprendiste.`}
+          placeholder={`Describe tu entregable. Sé específico/a — menciona qué hiciste, con quién lo validaste, y qué aprendiste.`}
           disabled={isSubmitted}
           required
         />

@@ -16,7 +16,7 @@ const WEEK_PHASES = [
   { week: 2, phase: 'Despertar', title: 'IA como forma de pensar', icon: '🧠' },
   { week: 3, phase: 'Construir', title: 'Algo real en 5 días', icon: '🔨' },
   { week: 4, phase: 'Construir', title: 'Las 3 preguntas del negocio', icon: '💡' },
-  { week: 5, phase: 'Construir', title: 'Agentes que trabajan mientras dormís', icon: '🤖' },
+  { week: 5, phase: 'Construir', title: 'Agentes que trabajan mientras duermes', icon: '🤖' },
   { week: 6, phase: 'Lanzar', title: 'Demo Day: tu primer hito público', icon: '🚀' },
 ]
 

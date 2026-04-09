@@ -25,16 +25,19 @@ create index if not exists idx_buddy_messages_receiver
 alter table public.buddy_messages enable row level security;
 
 -- Sender or receiver can read their thread
+drop policy if exists "buddy_messages_select" on public.buddy_messages;
 create policy "buddy_messages_select"
   on public.buddy_messages for select
   using (sender_id = auth.uid() or receiver_id = auth.uid());
 
 -- Only send as yourself
+drop policy if exists "buddy_messages_insert" on public.buddy_messages;
 create policy "buddy_messages_insert"
   on public.buddy_messages for insert
   with check (sender_id = auth.uid());
 
 -- Only receiver can mark is_read = true
+drop policy if exists "buddy_messages_update" on public.buddy_messages;
 create policy "buddy_messages_update"
   on public.buddy_messages for update
   using  (receiver_id = auth.uid())

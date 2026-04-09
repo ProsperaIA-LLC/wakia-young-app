@@ -66,7 +66,7 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
   const [loading, setLoading] = useState(false)
   const [msgs, setMsgs] = useState<Array<{ role: 'assistant' | 'user'; content: string }>>([{
     role: 'assistant',
-    content: `¡Hola ${user?.nickname || 'estudiante'}! Soy Luna, tu tutora IA. Estoy acá para ayudarte con lo que necesités esta semana. ¿Por dónde empezamos? 🚀`,
+    content: `¡Hola ${user?.nickname || 'estudiante'}! Soy Luna, tu tutora IA. Estoy aquí para ayudarte con lo que necesites esta semana. ¿Por dónde empezamos? 🚀`,
   }])
   const msgsEndRef = useRef<HTMLDivElement>(null)
 
@@ -87,9 +87,9 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
         body: JSON.stringify({ message, weekId: week?.id ?? '', cohortId }),
       })
       const data = await res.json()
-      setMsgs(prev => [...prev, { role: 'assistant', content: data.reply ?? 'Ups, algo salió mal. ¿Lo intentás de nuevo?' }])
+      setMsgs(prev => [...prev, { role: 'assistant', content: data.reply ?? 'Ups, algo salió mal. ¿Lo intentas de nuevo?' }])
     } catch {
-      setMsgs(prev => [...prev, { role: 'assistant', content: 'Hubo un problema de conexión. ¿Lo intentás de nuevo?' }])
+      setMsgs(prev => [...prev, { role: 'assistant', content: 'Hubo un problema de conexión. ¿Lo intentas de nuevo?' }])
     }
     setLoading(false)
   }
@@ -257,7 +257,7 @@ function NoCohortScreen() {
           border: '1.5px solid var(--border)', textAlign: 'left',
         }}>
           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
-            Mientras tanto podés
+            Mientras tanto puedes
           </p>
           {[
             '📩 Revisar el email de bienvenida',
@@ -308,9 +308,9 @@ export default function DashboardPage() {
 
   // Greeting sub-text
   const greetingSub = isSubmitted
-    ? '¡Ya entregaste esta semana! Mirá cómo va tu pod 👀'
+    ? '¡Ya entregaste esta semana! Mira cómo va tu pod 👀'
     : currentWeek
-      ? `Tenés ${daysUntilDeadline} día${daysUntilDeadline !== 1 ? 's' : ''} para entregar tu entregable. ¡Vamos!`
+      ? `Tienes ${daysUntilDeadline} día${daysUntilDeadline !== 1 ? 's' : ''} para entregar tu entregable. ¡Vamos!`
       : 'Bienvenido/a al programa. ¡Empecemos!'
 
   return (

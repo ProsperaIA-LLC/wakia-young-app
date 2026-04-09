@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
           Panel de administración
         </h1>
         <p style={{ color: 'var(--ink3)', fontSize: 13, margin: 0 }}>
-          Vista global de la plataforma Prospera Young AI
+          Vista global de la plataforma WakiaYoung
         </p>
       </div>
 
