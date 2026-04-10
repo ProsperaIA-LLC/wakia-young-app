@@ -1,4 +1,4 @@
-# CONTEXT.md — Prospera Young AI Platform
+# CONTEXT.md — Wakia Young Platform
 > Load this file at the start of every Claude Code session.
 > This is the single source of truth for the entire project.
 
@@ -6,7 +6,7 @@
 
 ## 1. WHAT WE ARE BUILDING
 
-**Prospera Young AI** is an intensive 6-week virtual program for Latino students aged 14–18 (in LATAM and the US) where they build real AI-powered products from day one. The platform supports the full learning experience: weekly challenges, deliverables, peer accountability (pods), an AI tutor (Luna), and mentor oversight.
+**Wakia Young** is an intensive 6-week virtual program for Latino students aged 14–18 (in LATAM and the US) where they build real AI-powered products from day one. The platform supports the full learning experience: weekly challenges, deliverables, peer accountability (pods), an AI tutor (Luna), and mentor oversight.
 
 **Two user types:**
 - **Students** — complete weekly challenges, submit deliverables, chat with Luna, interact with their pod
@@ -345,7 +345,7 @@ Auth:           Supabase session (never expose API key to client)
 
 System prompt core identity:
   - Name: Luna
-  - Role: AI tutor for Prospera Young AI program
+  - Role: AI tutor for Wakia Young program
   - Language: Spanish, voseo latinoamericano (vos, tenés, podés)
   - Tone: warm, direct, Gen Z friendly — NOT corporate
   - Response length: max 3–4 sentences or short bullets
@@ -517,7 +517,7 @@ NEXT_PUBLIC_APP_URL=
 
 # Email (Resend) — para emails de consentimiento parental
 RESEND_API_KEY=
-RESEND_FROM_EMAIL=           # ej: noreply@prosperayoung.ai
+RESEND_FROM_EMAIL=           # ej: noreply@wakia.app
 
 # Seguridad — token HMAC para links de consentimiento parental
 CONSENT_TOKEN_SECRET=        # string aleatorio largo, ej: openssl rand -base64 32
@@ -528,7 +528,7 @@ CONSENT_TOKEN_SECRET=        # string aleatorio largo, ej: openssl rand -base64 
 ## 13. HOW TO WORK WITH THIS FILE IN CLAUDE CODE
 
 **Start every session with:**
-> "Read CONTEXT.md. We are building Prospera Young AI. Today we are working on [specific feature]."
+> "Read CONTEXT.md. We are building Wakia Young. Today we are working on [specific feature]."
 
 **When building a new component:**
 > "Using the design system in CONTEXT.md section 3, build [component name]. Use the color semantics exactly as defined."
@@ -542,4 +542,4 @@ CONSENT_TOKEN_SECRET=        # string aleatorio largo, ej: openssl rand -base64 
 ---
 
 *Last updated: March 2026 | Version 1.0*
-*Maintained by: Prospera Young AI dev team*
+*Maintained by: Wakia Young dev team*
