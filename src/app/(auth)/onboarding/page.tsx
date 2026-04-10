@@ -91,7 +91,7 @@ export default function OnboardingPage() {
     } else {
       setLoading(false)
       setStep('success')
-      setTimeout(() => { window.location.href = '/dashboard' }, 2000)
+      setTimeout(() => { window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/dashboard` }, 2000)
     }
   }
 

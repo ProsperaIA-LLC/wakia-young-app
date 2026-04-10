@@ -188,7 +188,7 @@ export default function MentorLayout({ children }: { children: React.ReactNode }
               onClick={async () => {
                 const { createClient } = await import('@/lib/supabase/client')
                 await createClient().auth.signOut()
-                window.location.href = '/young/login'
+                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/login`
               }}
               style={{
                 width: '100%', padding: '8px 12px',

@@ -75,7 +75,7 @@ function LoginPageInner() {
       setLoading(false)
       return
     }
-    window.location.href = '/dashboard'
+    window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/dashboard`
   }
 
   function handleRegister() {

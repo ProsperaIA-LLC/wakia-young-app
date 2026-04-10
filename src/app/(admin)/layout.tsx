@@ -177,7 +177,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               onClick={async () => {
                 const { createClient } = await import('@/lib/supabase/client')
                 await createClient().auth.signOut()
-                window.location.href = '/young/login'
+                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/login`
               }}
               style={{
                 width: '100%', padding: '7px 12px',
