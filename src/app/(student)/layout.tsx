@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 const NAV = [
-  { href: '/dashboard',    label: 'Inicio',      icon: '🏠' },
-  { href: '/deliverables', label: 'Entregable',  icon: '📦' },
-  { href: '/pod',          label: 'Mi Pod',      icon: '🫂' },
-  { href: '/diary',        label: 'Diario',      icon: '📓' },
-  { href: '/project',      label: 'Proyecto',    icon: '🚀' },
+  { href: '/dashboard',    label: 'Inicio',    icon: '🏠' },
+  { href: '/deliverables', label: 'Misión',    icon: '⚡' },
+  { href: '/pod',          label: 'Mi Pod',    icon: '🫂' },
+  { href: '/diary',        label: 'Diario',    icon: '📓' },
+  { href: '/project',      label: 'Proyecto',  icon: '🚀' },
 ]
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -171,8 +171,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               >
                 <span style={{ fontSize: '22px', lineHeight: 1 }}>{item.icon}</span>
                 <span style={{
-                  fontSize: '9px', fontWeight: active ? 700 : 500,
-                  letterSpacing: '0.02em', whiteSpace: 'nowrap',
+                  fontSize: '11px', fontWeight: active ? 700 : 500,
+                  letterSpacing: '0.01em', whiteSpace: 'nowrap',
                 }}>
                   {item.label}
                 </span>

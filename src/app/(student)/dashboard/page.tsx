@@ -350,7 +350,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── CONTENT ── */}
-      <div style={{ padding: '24px 28px 40px' }}>
+      <div style={{ padding: 'clamp(16px, 4vw, 28px)', paddingBottom: '40px' }}>
 
         {/* Greeting */}
         <div style={{ marginBottom: '22px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
@@ -388,9 +388,21 @@ export default function DashboardPage() {
               <h2 style={{ fontWeight: 800, fontSize: '24px', color: '#fff', lineHeight: 1.15, marginBottom: '10px', margin: '0 0 10px' }}>
                 {currentWeek.title}
               </h2>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, fontStyle: 'italic', maxWidth: '400px', margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, fontStyle: 'italic', maxWidth: '400px', margin: '0 0 16px' }}>
                 "{currentWeek.opening_question}"
               </p>
+              <Link href="/deliverables" style={{ textDecoration: 'none' }}>
+                <button style={{
+                  background: isSubmitted ? 'rgba(0,200,150,0.15)' : 'var(--green)',
+                  color: isSubmitted ? 'var(--green)' : 'var(--navy)',
+                  border: isSubmitted ? '1.5px solid rgba(0,200,150,0.4)' : 'none',
+                  borderRadius: '10px', padding: '10px 20px',
+                  fontWeight: 800, fontSize: '14px', cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}>
+                  {isSubmitted ? '✓ Misión entregada' : '⚡ Subir mi misión →'}
+                </button>
+              </Link>
             </div>
 
             {/* Right: days countdown + week dots */}
@@ -420,10 +432,10 @@ export default function DashboardPage() {
         {/* 3 Stat Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
           <StatCard
-            label="Entregable esta semana"
+            label="Misión esta semana"
             value={isSubmitted ? '✓' : '0'}
             color={isSubmitted ? 'green' : 'coral'}
-            sublabel={isSubmitted ? 'entregado y listo' : 'aún sin entregar'}
+            sublabel={isSubmitted ? '¡lista y enviada!' : 'aún sin enviar'}
           />
           <StatCard
             label="Días seguidos activo/a"
@@ -471,7 +483,7 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <Link href="/deliverables" style={{ textDecoration: 'none' }}>
                   <Button variant={isSubmitted ? 'teal' : 'primary'} size="md">
-                    {isSubmitted ? '✓ Ver entregable' : '↑ Subir entregable'}
+                    {isSubmitted ? '✓ Ver misión' : '⚡ Subir misión'}
                   </Button>
                 </Link>
                 {currentWeek.notion_guide_url && (
