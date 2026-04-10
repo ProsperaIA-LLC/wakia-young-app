@@ -9,7 +9,7 @@ interface Message {
   timestamp: Date
 }
 
-interface ProsperoChatProps {
+interface LunaChatProps {
   weekId: string
   cohortId: string
   userName?: string
@@ -28,7 +28,7 @@ function formatTime(date: Date) {
   return date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoChatProps) {
+export default function LunaChat({ weekId, cohortId, userName }: LunaChatProps) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')

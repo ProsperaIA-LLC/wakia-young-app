@@ -1,10 +1,10 @@
 // ============================================================
-// /lib/anthropic/prospero.ts
-// Próspero AI Tutor — Complete chat logic for WakiaYoung
+// /lib/anthropic/luna.ts
+// Luna AI Tutor — Complete chat logic for WakiaYoung
 //
 // Usage:
-//   import { buildProsperoMessages, PROSPERO_SYSTEM_PROMPT } from '@/lib/anthropic/prospero'
-//   import { checkDailyLimit, saveChatMessage, getChatHistory } from '@/lib/anthropic/prospero'
+//   import { buildLunaMessages, LUNA_SYSTEM_PROMPT_BASE } from '@/lib/anthropic/luna'
+//   import { checkDailyLimit, saveChatMessage, getChatHistory } from '@/lib/anthropic/luna'
 //
 // The API route at /app/api/chat/route.ts calls these functions.
 // NEVER import this file on the client — it uses ANTHROPIC_API_KEY.
@@ -48,7 +48,7 @@ function getAnthropicClient(): Anthropic {
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
 
-export interface ProsperoContext {
+export interface LunaContext {
   student: Pick<User, 'id' | 'full_name' | 'nickname' | 'country' | 'age'>
   currentWeek: Pick<Week,
     | 'week_number'
@@ -84,7 +84,7 @@ export interface ChatResult {
 // This is built dynamically per request with student context injected.
 // The static base is here — context is injected via buildSystemPrompt().
 
-export const PROSPERO_SYSTEM_PROMPT_BASE = `
+export const LUNA_SYSTEM_PROMPT_BASE = `
 Eres Luna, la tutora IA del programa WakiaYoung.
 
 QUIÉN ERES:
@@ -124,7 +124,7 @@ REGLAS ESTRICTAS:
 
 // ── BUILD SYSTEM PROMPT WITH CONTEXT ─────────────────────────────────────────
 
-export function buildSystemPrompt(ctx: ProsperoContext): string {
+export function buildSystemPrompt(ctx: LunaContext): string {
   const studentName = ctx.student.nickname || ctx.student.full_name.split(' ')[0]
   const buddyName = ctx.buddy?.nickname || ctx.buddy?.full_name?.split(' ')[0] || 'sin buddy asignado aún'
   const podName = ctx.pod?.name || 'pod por asignar'
@@ -139,7 +139,7 @@ export function buildSystemPrompt(ctx: ProsperoContext): string {
     : 'El estudiante está en Latinoamérica.'
 
   return `
-${PROSPERO_SYSTEM_PROMPT_BASE}
+${LUNA_SYSTEM_PROMPT_BASE}
 
 ---
 
@@ -175,7 +175,7 @@ export async function checkDailyLimit(userId: string): Promise<DailyLimitResult>
     .rpc('get_daily_message_count', { p_user_id: userId })
 
   if (error) {
-    console.error('[Próspero] Error checking daily limit:', error)
+    console.error('[Luna] Error checking daily limit:', error)
     // Fail open — don't block the student if the check fails
     return { count: 0, limitReached: false, remaining: MAX_DAILY_MESSAGES }
   }
@@ -206,7 +206,7 @@ export async function getChatHistory(
     .limit(limit)
 
   if (error || !data) {
-    console.error('[Próspero] Error fetching chat history:', error)
+    console.error('[Luna] Error fetching chat history:', error)
     return []
   }
 
@@ -240,7 +240,7 @@ export async function saveChatMessage(
     })
 
   if (error) {
-    console.error('[Próspero] Error saving chat message:', error)
+    console.error('[Luna] Error saving chat message:', error)
     // Don't throw — saving failure shouldn't crash the chat
   }
 }
@@ -256,13 +256,13 @@ async function logChatActivity(userId: string, cohortId: string): Promise<void> 
       user_id: userId,
       cohort_id: cohortId,
       action: 'chat_message',
-      metadata: { tutor: 'prospero' },
+      metadata: { tutor: 'luna' },
     })
 }
 
 // ── BUILD MESSAGE ARRAY ───────────────────────────────────────────────────────
 
-export function buildProsperoMessages(
+export function buildLunaMessages(
   history: Anthropic.MessageParam[],
   newMessage: string
 ): Anthropic.MessageParam[] {
@@ -278,7 +278,7 @@ export function buildProsperoMessages(
 export async function chat(
   userId: string,
   request: ChatRequest,
-  context: ProsperoContext
+  context: LunaContext
 ): Promise<ChatResult> {
 
   // 1. Check daily limit
@@ -297,7 +297,7 @@ export async function chat(
   const history = await getChatHistory(userId, request.weekId)
 
   // 3. Build messages array
-  const messages = buildProsperoMessages(history, request.message)
+  const messages = buildLunaMessages(history, request.message)
 
   // 4. Build dynamic system prompt with student context
   const systemPrompt = buildSystemPrompt(context)
@@ -321,7 +321,7 @@ export async function chat(
     tokensUsed = response.usage?.output_tokens ?? 0
 
   } catch (error) {
-    console.error('[Próspero] Anthropic API error:', error)
+    console.error('[Luna] Anthropic API error:', error)
 
     // Handle specific error types
     if (error instanceof Anthropic.APIError) {
@@ -367,13 +367,13 @@ export async function chat(
 }
 
 // ── LOAD CONTEXT FROM DATABASE ────────────────────────────────────────────────
-// Helper used in the API route to build ProsperoContext from DB data
+// Helper used in the API route to build LunaContext from DB data
 
-export async function loadProsperoContext(
+export async function loadLunaContext(
   userId: string,
   cohortId: string,
   weekId: string
-): Promise<ProsperoContext | null> {
+): Promise<LunaContext | null> {
   const supabase = await createClient()
 
   // Parallel queries for performance
@@ -413,7 +413,7 @@ export async function loadProsperoContext(
   ])
 
   if (studentRes.error || weekRes.error || enrollmentRes.error) {
-    console.error('[Próspero] Error loading context:', {
+    console.error('[Luna] Error loading context:', {
       student: studentRes.error,
       week: weekRes.error,
       enrollment: enrollmentRes.error,
@@ -422,7 +422,7 @@ export async function loadProsperoContext(
   }
 
   // Load buddy info if exists
-  let buddy: ProsperoContext['buddy'] = null
+  let buddy: LunaContext['buddy'] = null
   const buddyId = podMemberRes.data?.buddy_id
 
   if (buddyId) {

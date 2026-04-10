@@ -58,9 +58,9 @@ function FeedTag({ type, label }: { type?: string; label?: string }) {
   )
 }
 
-// ── Próspero Chat Panel ───────────────────────────────────────────────────────
+// ── Luna Chat Panel ───────────────────────────────────────────────────────────
 
-function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week | null; cohortId: string }) {
+function LunaPanel({ user, week, cohortId }: { user: User | null; week: Week | null; cohortId: string }) {
   const [open, setOpen]       = useState(false)
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -701,8 +701,8 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Próspero FAB */}
-      <ProsperoPanel user={user} week={currentWeek} cohortId={cohort.id} />
+      {/* Luna FAB */}
+      <LunaPanel user={user} week={currentWeek} cohortId={cohort.id} />
 
       <style>{`
         @keyframes tdBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }

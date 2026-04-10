@@ -1,1 +1,1 @@
-// Próspero AI chat component
+// Luna AI chat component

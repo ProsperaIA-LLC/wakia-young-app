@@ -1,12 +1,12 @@
-// POST /api/chat — Próspero AI tutor endpoint
+// POST /api/chat — Luna AI tutor endpoint
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
   chat,
-  loadProsperoContext,
+  loadLunaContext,
   shouldEscalateToMentor,
   createEscalationAlert,
-} from '@/lib/anthropic/prospero'
+} from '@/lib/anthropic/luna'
 import type { ChatRequest } from '@/types'
 
 export async function POST(request: Request) {
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'cohortId and weekId are required' }, { status: 400 })
   }
 
-  // 3. Load Próspero context from DB
-  const context = await loadProsperoContext(authUser.id, cohortId, weekId)
+  // 3. Load Luna context from DB
+  const context = await loadLunaContext(authUser.id, cohortId, weekId)
   if (!context) {
     return NextResponse.json({ error: 'Could not load student context' }, { status: 500 })
   }
@@ -45,11 +45,11 @@ export async function POST(request: Request) {
   if (shouldEscalateToMentor(message)) {
     // Fire and forget — don't block the response
     createEscalationAlert(authUser.id, cohortId, message).catch(err =>
-      console.error('[Próspero] Escalation alert failed:', err)
+      console.error('[Luna] Escalation alert failed:', err)
     )
   }
 
-  // 5. Call Próspero
+  // 5. Call Luna
   const result = await chat(authUser.id, body, context)
 
   return NextResponse.json({
