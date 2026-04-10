@@ -33,6 +33,7 @@ export default function ProjectPage() {
   const [deliverables, setDeliverables] = useState<any[]>([])
   const [currentWeek, setCurrentWeek]   = useState<number>(1)
   const [loading, setLoading]           = useState(true)
+  const [noCohort, setNoCohort]         = useState(false)
   const [certData, setCertData]         = useState<CertData | null>(null)
   const [generating, setGenerating]     = useState(false)
 
@@ -53,6 +54,7 @@ export default function ProjectPage() {
         fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/certificate`),
       ])
 
+      if (!dashRes.ok) { setNoCohort(true); setLoading(false); return }
       const dashJson: DashboardResponse = await dashRes.json()
       setCurrentWeek(dashJson.data.cohort.current_week)
       setDeliverables(delivRes.data || [])
@@ -92,6 +94,20 @@ export default function ProjectPage() {
           animation: 'spin 0.8s linear infinite',
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
+  if (noCohort) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '380px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚀</div>
+          <h2 style={{ fontWeight: 800, fontSize: '20px', marginBottom: '8px' }}>Tu cohorte todavía no está activa</h2>
+          <p style={{ color: 'var(--ink3)', fontSize: '14px', lineHeight: 1.6 }}>
+            Tu historial de proyecto estará disponible cuando arranque el programa.
+          </p>
+        </div>
       </div>
     )
   }
