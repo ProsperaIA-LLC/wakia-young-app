@@ -125,7 +125,7 @@ export default function MentorDashboardPage() {
 
   async function resolveAlert(alertId: string) {
     setResolvedIds(prev => new Set([...prev, alertId]))
-    await fetch('/api/mentor/alerts', {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/alerts`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ alertId }),
@@ -140,7 +140,7 @@ export default function MentorDashboardPage() {
       ...data.yellowAlerts.map(a => a.alert.id),
     ]
     setResolvedIds(new Set(allIds))
-    await fetch('/api/mentor/alerts', {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/alerts`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ resolveAll: true, cohortId }),
@@ -149,7 +149,7 @@ export default function MentorDashboardPage() {
   }
 
   useEffect(() => {
-    fetch('/api/mentor/dashboard')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/dashboard`)
       .then(async r => {
         if (r.status === 401 || r.status === 403) { router.replace('/login'); return }
         setData(await r.json())

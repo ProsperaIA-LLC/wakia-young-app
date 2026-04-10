@@ -45,7 +45,7 @@ export default function SettingsPage() {
   const [status, setStatus]             = useState('active')
 
   useEffect(() => {
-    fetch('/api/mentor/cohort')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/cohort`)
       .then(r => r.json())
       .then(d => {
         if (d.cohort) {
@@ -66,7 +66,7 @@ export default function SettingsPage() {
     setSaving(true)
     setSaved(false)
 
-    const res = await fetch('/api/mentor/cohort', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/cohort`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

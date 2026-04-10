@@ -73,7 +73,7 @@ export default function ReflectionsPage() {
   async function saveFeedback() {
     if (!feedbackId || !feedback.trim()) return
     setSaving(true)
-    const res = await fetch('/api/reflections', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/reflections`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reflectionId: feedbackId, mentorFeedback: feedback }),

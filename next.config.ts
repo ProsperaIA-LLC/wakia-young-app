@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  basePath: '/young',
+  env: {
+    NEXT_PUBLIC_BASE_PATH: '/young',
+  },
   async headers() {
     return [
       {

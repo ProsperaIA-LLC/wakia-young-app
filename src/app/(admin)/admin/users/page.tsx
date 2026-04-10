@@ -72,7 +72,7 @@ export default function AdminUsersPage() {
   const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetch('/api/admin/users')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/users`)
       .then(r => r.json())
       .then(d => { setUsers(d.users ?? []); setLoading(false) })
       .catch(() => setLoading(false))
@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
     e.preventDefault()
     setCreating(true)
     setCreateError(null)
-    const res = await fetch('/api/admin/create-user', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/create-user`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -108,13 +108,13 @@ export default function AdminUsersPage() {
       setShowModal(false)
       setCreateSuccess(false)
       setForm(EMPTY_FORM)
-      fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users ?? []))
+      fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/users`).then(r => r.json()).then(d => setUsers(d.users ?? []))
     }, 1800)
   }
 
   async function updateRole(userId: string, newRole: string) {
     setUpdating(userId)
-    await fetch('/api/admin/users', {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/users`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, role: newRole }),

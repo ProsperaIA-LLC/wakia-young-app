@@ -239,7 +239,7 @@ export default function LandingPage() {
                 {['#ff5f57','#febc2e','#28c840'].map(c => (
                   <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />
                 ))}
-                <span className="sans" style={{ marginLeft: 8, fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>prospera-young-ai-platform.vercel.app</span>
+                <span className="sans" style={{ marginLeft: 8, fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>wakia-young-app.vercel.app</span>
               </div>
               {/* Mock dashboard */}
               <div style={{ padding: 20 }}>

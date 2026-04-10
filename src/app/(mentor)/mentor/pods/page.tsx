@@ -26,7 +26,7 @@ export default function PodsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/mentor/dashboard')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/dashboard`)
       .then(r => r.json())
       .then(data => {
         const currentWeek = data.cohort?.current_week ?? 1

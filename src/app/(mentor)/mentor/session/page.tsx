@@ -113,7 +113,7 @@ export default function SessionPage() {
   const [notes, setNotes] = useState('')
 
   useEffect(() => {
-    fetch('/api/mentor/dashboard')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/dashboard`)
       .then(r => r.json())
       .then(payload => {
         if (!payload.cohort) { setLoading(false); return }

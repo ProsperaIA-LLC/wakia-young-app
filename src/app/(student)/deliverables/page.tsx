@@ -134,7 +134,7 @@ function ReflectionForm({
 
     setSaving(true)
 
-    const res = await fetch('/api/reflections', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/reflections`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ weekId, cohortId, q1, q2, q3 }),
@@ -296,7 +296,7 @@ function DeliverableForm({
     if (!content.trim()) return
     setSaving(true)
 
-    const res = await fetch('/api/deliverables', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/deliverables`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ weekId, cohortId, content }),
@@ -422,7 +422,7 @@ export default function DeliverablesPage() {
 
   async function loadData() {
     try {
-      const res = await fetch('/api/student/dashboard')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/student/dashboard`)
       if (!res.ok) throw new Error('Failed')
       const json: DashboardResponse = await res.json()
       setData({

@@ -124,7 +124,7 @@ export default function RegisterPage() {
             borderRadius: '12px',
             marginBottom: '14px',
           }}>
-            <span style={{ color: 'var(--green)', fontSize: '24px', fontWeight: 800 }}>P</span>
+            <span style={{ color: 'var(--green)', fontSize: '24px', fontWeight: 800 }}>W</span>
           </div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
             Crear cuenta

@@ -45,7 +45,7 @@ function AppCard({
   async function act(action: 'approve' | 'reject') {
     setProcessing(action)
     setError('')
-    const res = await fetch('/api/admin/scholarships', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/scholarships`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ applicationId: app.id, action }),
@@ -176,7 +176,7 @@ export default function AdminScholarshipsPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
 
   useEffect(() => {
-    fetch('/api/admin/scholarships')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/scholarships`)
       .then(r => r.json())
       .then(d => { setApps(d.applications ?? []); setLoading(false) })
       .catch(() => setLoading(false))

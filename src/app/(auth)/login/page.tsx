@@ -39,7 +39,7 @@ function LoginPageInner() {
 
     // Verificar que el email está registrado antes de enviar el OTP
     try {
-      const check = await fetch('/api/auth/check-email', {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/auth/check-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -75,7 +75,7 @@ function LoginPageInner() {
       setLoading(false)
       return
     }
-    window.location.href = '/dashboard'
+    window.location.href = '/young/dashboard'
   }
 
   function handleRegister() {

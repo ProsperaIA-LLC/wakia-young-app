@@ -50,7 +50,7 @@ function NewCohortForm({ onCreated }: { onCreated: (c: CohortRow) => void }) {
       return
     }
     setSaving(true)
-    const res = await fetch('/api/admin/cohorts', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/cohorts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -166,7 +166,7 @@ function CohortCard({ cohort, onUpdate }: { cohort: CohortRow; onUpdate: (id: st
 
   async function changeStatus(newStatus: string) {
     setSavingStatus(true)
-    await fetch('/api/admin/cohorts', {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/cohorts`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cohortId: cohort.id, status: newStatus }),
@@ -177,7 +177,7 @@ function CohortCard({ cohort, onUpdate }: { cohort: CohortRow; onUpdate: (id: st
 
   async function changeWeek(w: number) {
     setSavingWeek(true)
-    await fetch('/api/admin/cohorts', {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/cohorts`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cohortId: cohort.id, current_week: w }),
@@ -289,7 +289,7 @@ export default function AdminCohortsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/cohorts')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/cohorts`)
       .then(r => r.json())
       .then(d => { setCohorts(d.cohorts ?? []); setLoading(false) })
       .catch(() => setLoading(false))

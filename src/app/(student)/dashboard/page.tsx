@@ -81,7 +81,7 @@ function ProsperoPanel({ user, week, cohortId }: { user: User | null; week: Week
     setLoading(true)
     setMsgs(prev => [...prev, { role: 'user', content: message }])
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, weekId: week?.id ?? '', cohortId }),
@@ -281,7 +281,7 @@ export default function DashboardPage() {
   const [noCohort, setNoCohort] = useState(false)
 
   useEffect(() => {
-    fetch('/api/student/dashboard')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/student/dashboard`)
       .then(r => {
         if (r.status === 401) { router.push('/login'); return null }
         if (r.status === 404) { setNoCohort(true); return null }

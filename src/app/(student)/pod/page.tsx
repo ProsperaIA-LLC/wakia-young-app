@@ -174,7 +174,7 @@ function PodLeaderSummaryForm({
     setStatus('loading')
     setErrorMsg('')
     try {
-      const res = await fetch('/api/pod-summary', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/pod-summary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ podId, cohortId, weekNumber, summaryText: text }),
@@ -389,7 +389,7 @@ function BuddyChat({ buddy }: { buddy: PodMemberData }) {
   const buddyName = buddy.nickname || buddy.fullName.split(' ')[0]
 
   useEffect(() => {
-    fetch('/api/buddy/messages')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/buddy/messages`)
       .then(r => r.json())
       .then(d => setData(d))
       .catch(() => setError('No se pudo cargar la conversación'))
@@ -405,7 +405,7 @@ function BuddyChat({ buddy }: { buddy: PodMemberData }) {
     setSending(true)
     setError('')
     try {
-      const res = await fetch('/api/buddy/messages', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/buddy/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim() }),
@@ -614,7 +614,7 @@ export default function PodPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/pod')
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/pod`)
         if (!res.ok) {
           const d = await res.json()
           setError(d.error || 'Error cargando el pod')
@@ -625,7 +625,7 @@ export default function PodPage() {
 
         // Also get week number for the summary form
         if (data.currentWeekId) {
-          const dashRes = await fetch('/api/student/dashboard')
+          const dashRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/student/dashboard`)
           if (dashRes.ok) {
             const dash = await dashRes.json()
             setWeekNumber(dash.data?.currentWeek?.week_number ?? null)

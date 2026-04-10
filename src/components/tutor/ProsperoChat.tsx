@@ -68,7 +68,7 @@ export default function ProsperoChat({ weekId, cohortId, userName }: ProsperoCha
     setLoading(true)
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmed, weekId, cohortId }),

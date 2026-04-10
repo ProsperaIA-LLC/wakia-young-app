@@ -90,7 +90,7 @@ export default function ScholarshipPage() {
 
     setSaving(true)
 
-    const res = await fetch('/api/scholarship', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/scholarship`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

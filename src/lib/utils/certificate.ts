@@ -157,21 +157,21 @@ export async function generateCertificate(
   doc.setFillColor(...C.teal)
   doc.rect(0, 49, W, 3, 'F')
 
-  // "PROSPERA YOUNG AI" logo text — top-left
+  // "WAKIA YOUNG" logo text — top-left
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(...C.green)
-  doc.text('PROSPERA', 14, 18)
+  doc.text('WAKIA', 14, 18)
   doc.setTextColor(...C.white)
-  doc.text('YOUNG AI', 14, 25)
+  doc.text('YOUNG', 14, 25)
 
-  // Small decorative P box (mimics the nav logo)
+  // Small decorative W box (mimics the nav logo)
   doc.setFillColor(...C.green)
   doc.roundedRect(14, 28, 8, 8, 1, 1, 'F')
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8)
   doc.setTextColor(...C.navy)
-  doc.text('P', 18, 34.5, { align: 'center' })
+  doc.text('W', 18, 34.5, { align: 'center' })
 
   // Main header title — centered
   doc.setFont('helvetica', 'bold')
@@ -375,5 +375,5 @@ export async function generateCertificate(
   // ── 5. Save ────────────────────────────────────────────────────────────────
 
   const safeName = student.fullName.replace(/\s+/g, '_').toLowerCase()
-  doc.save(`certificado_${safeName}_prospera_young_ai.pdf`)
+  doc.save(`certificado_${safeName}_wakia_young.pdf`)
 }

@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/stats')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/admin/stats`)
       .then(r => r.json())
       .then(d => { setStats(d); setLoading(false) })
       .catch(() => { setError('No se pudieron cargar las estadísticas'); setLoading(false) })

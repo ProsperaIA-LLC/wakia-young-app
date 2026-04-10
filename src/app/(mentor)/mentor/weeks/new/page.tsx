@@ -40,7 +40,7 @@ export default function NewWeekPage() {
   const [notionGuideUrl, setNotionGuideUrl]           = useState('')
 
   useEffect(() => {
-    fetch('/api/mentor/cohort')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/cohort`)
       .then(r => r.json())
       .then(d => {
         if (d.cohort) {
@@ -78,7 +78,7 @@ export default function NewWeekPage() {
     setError('')
     setSaving(true)
 
-    const res = await fetch('/api/mentor/weeks', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/weeks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -39,23 +39,24 @@ export async function GET(request: NextRequest) {
   // ── PKCE flow (code) ──────────────────────────────────────────
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) return NextResponse.redirect(`${origin}/login?error=auth`)
+    if (error) return NextResponse.redirect(`${origin}/young/login?error=auth`)
   }
 
   // ── Magic link / OTP flow (token_hash) ───────────────────────
   else if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
-    if (error) return NextResponse.redirect(`${origin}/login?error=auth`)
+    if (error) return NextResponse.redirect(`${origin}/young/login?error=auth`)
   }
 
   else {
-    return NextResponse.redirect(`${origin}/login?error=auth`)
+    return NextResponse.redirect(`${origin}/young/login?error=auth`)
   }
 
   // ── Redirect: onboarding if new user, dashboard if existing ──
   const { data: { user } } = await supabase.auth.getUser()
 
-  let redirectTo = `${origin}${next}`
+  const bp = '/young'
+  let redirectTo = `${origin}${bp}${next}`
   if (user) {
     const { data: profile } = await supabase
       .from('users')
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (!profile?.nickname) {
-      redirectTo = `${origin}/onboarding`
+      redirectTo = `${origin}${bp}/onboarding`
     }
   }
 

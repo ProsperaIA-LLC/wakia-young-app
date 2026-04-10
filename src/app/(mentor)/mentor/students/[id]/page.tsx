@@ -194,7 +194,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   async function saveReflectionFeedback() {
     if (!feedbackId || !feedback.trim()) return
     setSavingFeedback(true)
-    const res = await fetch('/api/reflections', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/reflections`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reflectionId: feedbackId, mentorFeedback: feedback }),
@@ -211,7 +211,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     if (!cohortId) return
     setSavingScores(true)
     setScoresSaved(false)
-    const res = await fetch('/api/mentor/scores', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/scores`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: id, cohort_id: cohortId, ...scores }),

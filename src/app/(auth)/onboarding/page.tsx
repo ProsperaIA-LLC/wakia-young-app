@@ -59,34 +59,39 @@ export default function OnboardingPage() {
     const age = Number(user.user_metadata?.age) || 0
     const market = country === 'US' ? 'USA' : 'LATAM'
     const fullName = user.user_metadata?.full_name || user.user_metadata?.nickname || nickname || user.email!.split('@')[0]
-    const { error: upsertError } = await supabase
-      .from('users')
-      .upsert({
-        id: user.id, email: user.email!, full_name: fullName,
-        nickname: nickname || fullName, country, timezone, market,
-        avatar_url: avatar, age: age || null,
-        parent_consent: age >= 18,  // under-18 must wait for parent email confirmation
-        role: 'student',
-      }, { onConflict: 'id' })
-    if (upsertError) {
-      setError(`Error guardando perfil: ${upsertError.message}`)
+
+    // Save via API route (service role handles duplicate email conflicts)
+    const saveRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/onboarding/save`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ nickname: nickname || fullName, country, timezone, market, avatar, fullName, age: age || null }),
+    })
+    if (!saveRes.ok) {
+      const data = await saveRes.json()
+      setError(`Error guardando perfil: ${data.error ?? 'Intentá de nuevo.'}`)
       setLoading(false)
       return
     }
-    // Verify the save actually worked
-    const { data: saved, error: readError } = await supabase
-      .from('users').select('nickname').eq('id', user.id).single()
-    if (readError || !saved?.nickname) {
-      setError(`No se pudo verificar el perfil guardado. ${readError?.message ?? 'Intentá de nuevo.'}`)
-      setLoading(false)
-      return
-    }
-    setLoading(false)
     if (age < 18 && age > 0) {
+      // Send parent consent email
+      const parentName  = user.user_metadata?.parent_name  ?? ''
+      const parentEmail = user.user_metadata?.parent_email ?? ''
+      const market      = user.user_metadata?.market       ?? (country === 'US' ? 'USA' : 'LATAM')
+
+      if (parentEmail) {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/consent/send`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ parentName, parentEmail, studentName: fullName, market }),
+        })
+      }
+
+      setLoading(false)
       setStep('pending-consent')
     } else {
+      setLoading(false)
       setStep('success')
-      setTimeout(() => { window.location.href = '/dashboard' }, 2000)
+      setTimeout(() => { window.location.href = '/young/dashboard' }, 2000)
     }
   }
 

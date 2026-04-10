@@ -33,7 +33,7 @@ export default function StudentsPage() {
   const [sortBy, setSortBy] = useState<'name' | 'activity' | 'status'>('activity')
 
   useEffect(() => {
-    fetch('/api/mentor/dashboard')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/dashboard`)
       .then(r => r.json())
       .then(d => {
         const currentWeek = d.cohort?.current_week ?? 1

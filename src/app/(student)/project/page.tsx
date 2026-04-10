@@ -44,13 +44,13 @@ export default function ProjectPage() {
 
       // Parallel: dashboard (week info) + deliverables + certificate eligibility
       const [dashRes, delivRes, certRes] = await Promise.all([
-        fetch('/api/student/dashboard'),
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/student/dashboard`),
         supabase
           .from('deliverables')
           .select('*, weeks(week_number, title, phase, deliverable_description, success_signal)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true }),
-        fetch('/api/certificate'),
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/certificate`),
       ])
 
       const dashJson: DashboardResponse = await dashRes.json()

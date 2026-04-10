@@ -164,7 +164,7 @@ function ApplyForm({ market, initPriceType }: { market: Market; initPriceType: P
     setError(null)
     setSubmitting(true)
 
-    const res = await fetch('/api/checkout', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/checkout`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -483,7 +483,7 @@ function ApplyPageInner() {
 
   // Derive name from session if possible (stored in sessionStorage on success)
   const studentName = typeof window !== 'undefined'
-    ? sessionStorage.getItem('prospera_student_name') ?? ''
+    ? sessionStorage.getItem('wakia_student_name') ?? ''
     : ''
 
   return (
