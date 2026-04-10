@@ -351,9 +351,10 @@ export interface SubmitDeliverableRequest {
 // POST /api/reflections — request body
 export interface SubmitReflectionRequest {
   weekId: string
-  deliverableId: string
-  answerQ1: string
-  answerQ2: string
+  cohortId: string
+  q1: string
+  q2: string
+  q3: string
 }
 
 // POST /api/pod-summary — request body

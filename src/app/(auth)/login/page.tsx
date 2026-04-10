@@ -75,7 +75,7 @@ function LoginPageInner() {
       setLoading(false)
       return
     }
-    window.location.href = '/young/dashboard'
+    window.location.href = '/dashboard'
   }
 
   function handleRegister() {

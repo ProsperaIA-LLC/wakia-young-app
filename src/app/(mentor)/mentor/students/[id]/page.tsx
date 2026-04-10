@@ -160,7 +160,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
 
       // Competency scores (via API to use service role)
       if (enrollment?.cohort_id) {
-        const scoresRes = await fetch(`/api/mentor/scores?student_id=${id}&cohort_id=${enrollment.cohort_id}`)
+        const scoresRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/scores?student_id=${id}&cohort_id=${enrollment.cohort_id}`)
         if (scoresRes.ok) {
           const scoresJson = await scoresRes.json()
           if (scoresJson.scores) setScores(scoresJson.scores)

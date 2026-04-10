@@ -21,7 +21,7 @@ Framework:     Next.js 16 (App Router) + TypeScript
 Styling:       Tailwind CSS v4
 Database:      Supabase (Postgres + Auth + Realtime)
 Auth:          Supabase Auth — magic link only (no passwords)
-AI Tutor:      Anthropic SDK (@anthropic-ai/sdk) — claude-sonnet-4-20250514
+AI Tutor:      Anthropic SDK (@anthropic-ai/sdk) — claude-sonnet-4-6
 Payments:      Stripe (already installed)
 PDF:           jsPDF (certificates)
 Deployment:    Vercel
@@ -339,7 +339,7 @@ Dropout prevention triggers (app alerts mentor automatically):
 ## 8. LUNA AI TUTOR
 
 ```
-Model:          claude-sonnet-4-20250514
+Model:          claude-sonnet-4-6
 API route:      /api/chat (POST)
 Auth:           Supabase session (never expose API key to client)
 

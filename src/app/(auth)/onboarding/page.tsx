@@ -91,7 +91,7 @@ export default function OnboardingPage() {
     } else {
       setLoading(false)
       setStep('success')
-      setTimeout(() => { window.location.href = '/young/dashboard' }, 2000)
+      setTimeout(() => { window.location.href = '/dashboard' }, 2000)
     }
   }
 
@@ -318,12 +318,12 @@ export default function OnboardingPage() {
               <button onClick={() => setStep(2)} style={btnBack}>← Atrás</button>
               <button
                 onClick={handleFinish}
-                disabled={loading || !c2 || !c3}
+                disabled={loading || !c1 || !c2 || !c3}
                 style={{
                   ...btnNext,
-                  background: loading || !c2 || !c3 ? 'var(--bg2)' : 'var(--green)',
-                  color: loading || !c2 || !c3 ? 'var(--ink4)' : 'var(--navy)',
-                  cursor: loading || !c2 || !c3 ? 'not-allowed' : 'pointer',
+                  background: loading || !c1 || !c2 || !c3 ? 'var(--bg2)' : 'var(--green)',
+                  color: loading || !c1 || !c2 || !c3 ? 'var(--ink4)' : 'var(--navy)',
+                  cursor: loading || !c1 || !c2 || !c3 ? 'not-allowed' : 'pointer',
                 }}
               >
                 {loading ? 'Guardando...' : 'Comenzar el programa 🚀'}
