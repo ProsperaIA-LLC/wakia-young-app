@@ -20,6 +20,7 @@ interface DeliverableRow {
   week_id: string
   status: string
   content: string | null
+  mentor_feedback: string | null
   created_at: string
   week: { week_number: number; title: string; phase: string } | null
 }
@@ -101,9 +102,15 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
   const [loading, setLoading] = useState(true)
   const [newNote, setNewNote] = useState('')
   const [savingNote, setSavingNote] = useState(false)
+  // Reflection feedback
   const [feedbackId, setFeedbackId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
   const [savingFeedback, setSavingFeedback] = useState(false)
+
+  // Deliverable feedback
+  const [delivFeedbackId, setDelivFeedbackId] = useState<string | null>(null)
+  const [delivFeedback, setDelivFeedback] = useState('')
+  const [savingDelivFeedback, setSavingDelivFeedback] = useState(false)
 
   // Competency scores
   const [scores, setScores] = useState<ScoreRow>({
@@ -207,6 +214,26 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
     setSavingFeedback(false)
   }
 
+  async function saveDeliverableFeedback() {
+    if (!delivFeedbackId || !delivFeedback.trim()) return
+    setSavingDelivFeedback(true)
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/mentor/deliverables`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deliverable_id: delivFeedbackId, mentor_feedback: delivFeedback }),
+    })
+    if (res.ok) {
+      setDeliverables(prev => prev.map(d =>
+        d.id === delivFeedbackId
+          ? { ...d, mentor_feedback: delivFeedback, status: 'reviewed' }
+          : d
+      ))
+    }
+    setDelivFeedbackId(null)
+    setDelivFeedback('')
+    setSavingDelivFeedback(false)
+  }
+
   async function saveScores() {
     if (!cohortId) return
     setSavingScores(true)
@@ -303,27 +330,80 @@ export default function StudentDetailPage({ params }: { params: Promise<{ id: st
             <div key={d.id} style={{
               background: 'white', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)', padding: '14px 18px',
-              display: 'flex', alignItems: 'flex-start', gap: '14px',
             }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700, fontSize: '13px' }}>
-                    S{d.week?.week_number ?? '?'} — {d.week?.title ?? 'Entregable'}
-                  </span>
-                  <span style={{
-                    fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px',
-                    background: ['submitted', 'reviewed'].includes(d.status) ? '#D1FAE5' : '#FEF3C7',
-                    color: ['submitted', 'reviewed'].includes(d.status) ? '#065F46' : '#92400E',
-                  }}>
-                    {d.status === 'submitted' ? 'Entregado' : d.status === 'reviewed' ? 'Revisado' : 'Borrador'}
-                  </span>
-                </div>
-                {d.content && (
-                  <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                    {d.content.length > 200 ? d.content.slice(0, 200) + '...' : d.content}
-                  </p>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: '13px' }}>
+                  S{d.week?.week_number ?? '?'} — {d.week?.title ?? 'Entregable'}
+                </span>
+                <span style={{
+                  fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px',
+                  background: d.status === 'reviewed' ? '#CCFBF1' : ['submitted'].includes(d.status) ? '#D1FAE5' : '#FEF3C7',
+                  color: d.status === 'reviewed' ? '#0F766E' : ['submitted'].includes(d.status) ? '#065F46' : '#92400E',
+                }}>
+                  {d.status === 'submitted' ? 'Entregado' : d.status === 'reviewed' ? 'Revisado ✓' : 'Borrador'}
+                </span>
               </div>
+
+              {d.content && (
+                <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 10px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {d.content.length > 240 ? d.content.slice(0, 240) + '…' : d.content}
+                </p>
+              )}
+
+              {/* Feedback section — only for submitted/reviewed */}
+              {['submitted', 'reviewed'].includes(d.status) && (
+                d.mentor_feedback ? (
+                  <div style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 'var(--radius)', padding: '10px 14px' }}>
+                    <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--teal)', margin: '0 0 4px' }}>Tu feedback</p>
+                    <p style={{ fontSize: '13px', color: 'var(--ink)', margin: 0 }}>{d.mentor_feedback}</p>
+                  </div>
+                ) : delivFeedbackId === d.id ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <textarea
+                      value={delivFeedback}
+                      onChange={e => setDelivFeedback(e.target.value)}
+                      placeholder="Escribí tu feedback para este entregable..."
+                      style={{
+                        width: '100%', minHeight: '80px', padding: '10px 12px',
+                        border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                        fontFamily: 'inherit', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box',
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={saveDeliverableFeedback}
+                        disabled={savingDelivFeedback || !delivFeedback.trim()}
+                        style={{
+                          background: 'var(--teal)', color: 'white', border: 'none',
+                          borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 700,
+                          fontSize: '12px', cursor: 'pointer',
+                        }}
+                      >
+                        {savingDelivFeedback ? 'Guardando...' : 'Guardar feedback'}
+                      </button>
+                      <button
+                        onClick={() => { setDelivFeedbackId(null); setDelivFeedback('') }}
+                        style={{
+                          background: 'none', color: '#6B7280', border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 600,
+                          fontSize: '12px', cursor: 'pointer',
+                        }}
+                      >Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setDelivFeedbackId(d.id); setDelivFeedback('') }}
+                    style={{
+                      background: 'none', color: 'var(--teal)', border: '1px solid var(--teal)',
+                      borderRadius: 'var(--radius)', padding: '6px 14px', fontWeight: 600,
+                      fontSize: '12px', cursor: 'pointer',
+                    }}
+                  >
+                    + Dar feedback
+                  </button>
+                )
+              )}
             </div>
           ))}
         </div>

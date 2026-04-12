@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 const NAV_PLATFORM = [
   { href: '/admin/dashboard',    label: 'Dashboard',   icon: '◈' },
   { href: '/admin/cohorts',      label: 'Cohortes',    icon: '⬡' },
+  { href: '/admin/pods',         label: 'Pods',        icon: '⬡' },
 ]
 
 const NAV_PEOPLE = [

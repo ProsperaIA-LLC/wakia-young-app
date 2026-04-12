@@ -260,11 +260,34 @@ function DeliverableForm({
   existingDeliverable: DeliverablePageData['currentDeliverable']
   onSaved: () => void
 }) {
-  const [content, setContent] = useState(existingDeliverable?.content || '')
+  const DRAFT_KEY = `wakia_draft_${weekId}`
+  const [content, setContent] = useState(() => {
+    // On first render: prefer existing DB content, fall back to localStorage draft
+    if (existingDeliverable?.content) return existingDeliverable.content
+    try { return localStorage.getItem(DRAFT_KEY) ?? '' } catch { return '' }
+  })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [autoSaved, setAutoSaved] = useState(false)
 
   const isSubmitted = existingDeliverable?.status === 'submitted' || existingDeliverable?.status === 'reviewed'
+
+  // Auto-save to localStorage 1.5 s after the user stops typing
+  useEffect(() => {
+    if (isSubmitted || !content.trim()) return
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, content)
+        setAutoSaved(true)
+        setTimeout(() => setAutoSaved(false), 2000)
+      } catch { /* storage not available */ }
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [content, isSubmitted, DRAFT_KEY])
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+  }
 
   async function handleSaveDraft(e: React.MouseEvent) {
     e.preventDefault()
@@ -287,6 +310,7 @@ function DeliverableForm({
       })
     }
 
+    clearDraft()
     setSaving(false)
     onSaved()
   }
@@ -309,6 +333,7 @@ function DeliverableForm({
       return
     }
 
+    clearDraft()
     setSaving(false)
     setSaved(true)
     onSaved()
@@ -345,9 +370,16 @@ function DeliverableForm({
 
       {/* Content textarea */}
       <div>
-        <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', marginBottom: '8px', color: 'var(--ink)' }}>
-          {deliverableDescription}
-        </label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <label style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)' }}>
+            {deliverableDescription}
+          </label>
+          {autoSaved && (
+            <span style={{ fontSize: 11, color: 'var(--teal)', fontWeight: 600 }}>
+              ✓ Guardado localmente
+            </span>
+          )}
+        </div>
         <textarea
           style={{
             width: '100%',
@@ -364,11 +396,33 @@ function DeliverableForm({
           }}
           value={content}
           onChange={e => setContent(e.target.value)}
-          placeholder={`Describe tu entregable. Sé específico/a — menciona qué hiciste, con quién lo validaste, y qué aprendiste.`}
+          placeholder="Describe tu entregable. Sé específico/a — menciona qué hiciste, con quién lo validaste, y qué aprendiste."
           disabled={isSubmitted}
           required
         />
+        {!isSubmitted && !existingDeliverable?.content && (
+          <p style={{ fontSize: 11, color: 'var(--ink3)', margin: '4px 0 0' }}>
+            Tu borrador se guarda automáticamente en este dispositivo.
+          </p>
+        )}
       </div>
+
+      {/* Mentor feedback — shown when reviewed */}
+      {existingDeliverable?.status === 'reviewed' && existingDeliverable?.mentor_feedback && (
+        <div style={{
+          background: 'rgba(0,140,165,0.06)',
+          border: '1px solid rgba(0,140,165,0.2)',
+          borderRadius: 'var(--radius)',
+          padding: '14px 16px',
+        }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--teal)', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Feedback de tu mentor
+          </p>
+          <p style={{ fontSize: 14, color: 'var(--ink)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+            {existingDeliverable.mentor_feedback}
+          </p>
+        </div>
+      )}
 
       {!isSubmitted && (
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
